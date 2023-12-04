@@ -1,11 +1,14 @@
 #! /usr/bin/env python
 
+from sensor_msgs.msg import Imu
+from nav_msgs.msg import Odometry
+from robot_controller.srv import DetectObjects
+from geometry_msgs.msg import Twist
+from cv_bridge import CvBridge
+
+from ultralytics import YOLO
 import numpy as np
 import rospy
-from sensor_msgs.msg import Imu, Image
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist
-from ultralytics import YOLO
 import torch
 import math
 import cv2
@@ -38,6 +41,8 @@ class RobotController:
             IMG_HEIGHT, #display_height,
         ), cv2.CAP_GSTREAMER)
 
+        # Create a CvBridge object for converting between ROS and OpenCV images
+        self.bridge = CvBridge()
         
 
         # Initialize the measurement subscribers
@@ -99,6 +104,15 @@ class RobotController:
         self.v = twist.linear.x
         self.w = twist.angular.z
 
+    def object_detection_service(self, frame):
+        try:
+            # Create a service proxy
+            object_detection_service = rospy.ServiceProxy('/object_detection_service', DetectObjects)
+            response = object_detection_service(frame)
+            return response.x1, response.x2, response.y1, response.y2, response.class_name
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
+
     def calculate_distance_and_angle(self, x1, x2, y1, y2):
         # Calculate the distance to the object
         #! Coefficients
@@ -121,18 +135,6 @@ class RobotController:
         angle_in_radians = math.atan((difference_object_image * px_in_meter) / focal_in_meter)
 
         return distance, angle_in_radians
-    
-    def object_detection_service(self, frame):
-        try:
-            # Create a service proxy
-            object_detection_service = rospy.ServiceProxy('/object_detection_service', Image)
-            
-            
-
-            # Call the service and return the response
-            return 
-        except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
 
     def motion_model(self, v, w, dt):
         """
@@ -256,9 +258,10 @@ class RobotController:
             self.motion_model(v, w, dt)
 
             # Call the object detection service
+            x1, x2, y1, y2, class_name = self.object_detection_service(self.bridge.cv2_to_imgmsg(org_frame, encoding="bgr8"))
 
             # Call the measurement model function
-            distance, bearing = self.calculate_distance_and_angle()
+            distance, bearing = self.calculate_distance_and_angle(x1, x2, y1, y2)
 
             # Only call the EKF function if distance and bearing are not None
             if distance is not None and bearing is not None:
@@ -272,7 +275,7 @@ class RobotController:
 
             # Sleep for the remainder of the loop
             rate.sleep()
-        cap.release()
+        self.cap.release()
         cv2.destroyAllWindows()
 
 
@@ -298,88 +301,88 @@ if __name__ == "__main__":
 
    
 
-classNames = ["turtlebot", "rosbot", "3D printer", "chair", "table", "person"]
+# classNames = ["turtlebot", "rosbot", "3D printer", "chair", "table", "person"]
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+# cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
-model = YOLO("./yolo8s.pt")
+# model = YOLO("./yolo8s.pt")
 
-model.to(device)
+# model.to(device)
 
-while(True):
-    ret, org_frame = cap.read()
+# while(True):
+#     ret, org_frame = cap.read()
 
-    # replicating the frame
-    if not ret or org_frame is None:
-       continue
-    frame = org_frame.copy()
+#     # replicating the frame
+#     if not ret or org_frame is None:
+#        continue
+#     frame = org_frame.copy()
     
-    # Perform inference
-    results = model(frame, stream=True)
+#     # Perform inference
+#     results = model(frame, stream=True)
 
-    for result in results:
-        boxes = result.boxes
+#     for result in results:
+#         boxes = result.boxes
 
-        for box in boxes:
+#         for box in boxes:
 
-            # class name
-            cls = int(box.cls[0])
-            class_name = classNames[cls]
-            #print("Class name -->", class_name)
-            if class_name != "chair":
-            	continue
-            # confidence
-            confidence = math.ceil((box.conf[0]*100))/100
-            #if confidence < 0.50:
-            	#continue
+#             # class name
+#             cls = int(box.cls[0])
+#             class_name = classNames[cls]
+#             #print("Class name -->", class_name)
+#             if class_name != "chair":
+#             	continue
+#             # confidence
+#             confidence = math.ceil((box.conf[0]*100))/100
+#             #if confidence < 0.50:
+#             	#continue
             
-            confidence_str = str(confidence)  # Convert confidence to string
-            #print("Confidence --->",confidence)
+#             confidence_str = str(confidence)  # Convert confidence to string
+#             #print("Confidence --->",confidence)
         
-            # bounding box
-            x1, y1, x2, y2 = box.xyxy[0]
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2) # convert to int values
+#             # bounding box
+#             x1, y1, x2, y2 = box.xyxy[0]
+#             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2) # convert to int values
 
-            # put box in cam
-            cv2.rectangle(org_frame, (x1, y1), (x2, y2), (255, 0, 255), 3)
+#             # put box in cam
+#             cv2.rectangle(org_frame, (x1, y1), (x2, y2), (255, 0, 255), 3)
 
-            # draw the center of the object
-            cv2.circle(org_frame, (int((x1+x2)/2), int((y1+y2)/2)), radius=5, color=(0, 0, 255), thickness=-1)
+#             # draw the center of the object
+#             cv2.circle(org_frame, (int((x1+x2)/2), int((y1+y2)/2)), radius=5, color=(0, 0, 255), thickness=-1)
             
-            # draw the center of the image
-            cv2.circle(org_frame, (int(frame.shape[1]/2), int(frame.shape[0]/2)), radius=5, color=(0, 255, 0), thickness=-1)
+#             # draw the center of the image
+#             cv2.circle(org_frame, (int(frame.shape[1]/2), int(frame.shape[0]/2)), radius=5, color=(0, 255, 0), thickness=-1)
 
-            # corner coordinations
-            print(f"Coordinates top left ---> ({x1}, {y1})")
-            print(f"Coordinates bottom right ---> ({x2}, {y2})")
-            # width and height
-            #print("Width --->",x2-x1)
-            #print("Height --->",y2-y1)
-            print("Bearing Angle AND Distance --->", calculate_bearning_and_distance(frame.shape[1], x1, x2, y1, y2))
+#             # corner coordinations
+#             print(f"Coordinates top left ---> ({x1}, {y1})")
+#             print(f"Coordinates bottom right ---> ({x2}, {y2})")
+#             # width and height
+#             #print("Width --->",x2-x1)
+#             #print("Height --->",y2-y1)
+#             print("Bearing Angle AND Distance --->", calculate_bearning_and_distance(frame.shape[1], x1, x2, y1, y2))
 
             
-            # Concatenate class name and confidence
-            text = class_name + ' (' + confidence_str + ')'
+#             # Concatenate class name and confidence
+#             text = class_name + ' (' + confidence_str + ')'
 
-            # object details
-            org = [x1, y1]
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            fontScale = 1
-            color = (255, 0, 0)
-            thickness = 2
+#             # object details
+#             org = [x1, y1]
+#             font = cv2.FONT_HERSHEY_SIMPLEX
+#             fontScale = 1
+#             color = (255, 0, 0)
+#             thickness = 2
 
-            cv2.putText(org_frame, text, org, font, fontScale, color, thickness)
+#             cv2.putText(org_frame, text, org, font, fontScale, color, thickness)
 
-    # Show the image with bounding boxes
-    cv2.imshow('frame', org_frame)
+#     # Show the image with bounding boxes
+#     cv2.imshow('frame', org_frame)
 
-    k = cv2.waitKey(1) & 0xFF
+#     k = cv2.waitKey(1) & 0xFF
 
-    # If 'q' is pressed, break from the loop
-    if k == ord('q'):
-        break
+#     # If 'q' is pressed, break from the loop
+#     if k == ord('q'):
+#         break
 
-cap.release()
-cv2.destroyAllWindows()
+# cap.release()
+# cv2.destroyAllWindows()

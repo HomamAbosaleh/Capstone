@@ -2,7 +2,7 @@
 
 import rospy
 from sensor_msgs.msg import Image
-from messages import DetectedImageMessage
+from robot_controller.msg import DetectedImage
 from cv_bridge import CvBridge
 import torch
 from ultralytics import YOLO
@@ -26,7 +26,7 @@ def detect_callback(msg):
                # class name
                cls = int(box.cls[0])
                class_name = classNames[cls]
-               return DetectedImageMessage(x1, y1, x2, y2, class_name)
+               return DetectedImage(x1, y1, x2, y2, class_name)
     return None
 
 
