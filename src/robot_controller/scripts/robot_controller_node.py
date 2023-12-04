@@ -2,13 +2,18 @@
 
 import numpy as np
 import rospy
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, Image
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from ultralytics import YOLO
 import torch
 import math
 import cv2
+
+
+# Defining Constants
+IMG_WIDTH = 416
+IMG_HEIGHT = 416
 
 
 class RobotController:
@@ -25,12 +30,12 @@ class RobotController:
         "video/x-raw, format=(string)BGR ! appsink"
         % (
             0, #sensor_id,
-            416, #capture_width,
-            416, #capture_height,
+            IMG_WIDTH, #capture_width,
+            IMG_HEIGHT, #capture_height,
             30, #framerate,
             2, #flip_method,
-            416, #display_width,
-            416, #display_height,
+            IMG_WIDTH, #display_width,
+            IMG_HEIGHT, #display_height,
         ), cv2.CAP_GSTREAMER)
 
         
@@ -93,6 +98,41 @@ class RobotController:
         self.theta = 2 * np.arctan2(pose.orientation.z, pose.orientation.w)  # Convert quaternion to euler
         self.v = twist.linear.x
         self.w = twist.angular.z
+
+    def calculate_distance_and_angle(self, x1, x2, y1, y2):
+        # Calculate the distance to the object
+        #! Coefficients
+        a = 394.1
+        b = -0.000153
+        c = 242.1
+        d = -1.367e-05
+        #! 
+        distance = a * np.exp(b * (x2 - x1) * (y2 - y1)) + c * np.exp(d * (x2 - x1) * (y2 - y1))
+        
+        # Calculate the bearing angle to the object
+        middle_point_x = (x2 + x1) / 2.0
+        print("middle point ", middle_point_x)
+
+        difference_object_image = (IMG_WIDTH/2.0) - middle_point_x
+        px_in_meter = 1.12e-6 * (3280/IMG_WIDTH)  # Convert from micrometers to meters
+        focal_in_meter = 2.96e-3  # Convert from millimeters to meters
+        print("difference between object and image ", difference_object_image)
+
+        angle_in_radians = math.atan((difference_object_image * px_in_meter) / focal_in_meter)
+
+        return distance, angle_in_radians
+    
+    def object_detection_service(self, frame):
+        try:
+            # Create a service proxy
+            object_detection_service = rospy.ServiceProxy('/object_detection_service', Image)
+            
+            
+
+            # Call the service and return the response
+            return 
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
 
     def motion_model(self, v, w, dt):
         """
@@ -215,8 +255,10 @@ class RobotController:
             dt = 0.1  # time step (corresponding to the rate of 10Hz)
             self.motion_model(v, w, dt)
 
+            # Call the object detection service
+
             # Call the measurement model function
-            distance, bearing = self.findDistanceBearing()
+            distance, bearing = self.calculate_distance_and_angle()
 
             # Only call the EKF function if distance and bearing are not None
             if distance is not None and bearing is not None:
