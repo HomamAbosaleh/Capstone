@@ -1,26 +1,14 @@
+#! /usr/bin/env python
+
 import rospy
 from sensor_msgs.msg import Image
+from messages import DetectedImageMessage
 from cv_bridge import CvBridge
-import cv2
 import torch
 from ultralytics import YOLO
 
-classNames = ["turtlebot", "rosbot", "3D printer", "chair", "table", "person"]
-
-# Initialize the ROS node
-rospy.init_node('object_detection_node')
-
-# Create a CvBridge object for converting between ROS and OpenCV images
-bridge = CvBridge()
-
-# Initialize the YOLO model
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-model = YOLO("./yolo8s.pt")
-model.to(device)
-
 # Define the image callback function
-def image_callback(msg):
+def detect_callback(msg):
     # Convert the ROS image message to an OpenCV image
     cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
@@ -38,12 +26,26 @@ def image_callback(msg):
                # class name
                cls = int(box.cls[0])
                class_name = classNames[cls]
-               return x1, y1, x2, y2, class_name
+               return DetectedImageMessage(x1, y1, x2, y2, class_name)
     return None
 
 
-# Create a subscriber for the image topic
-image_sub = rospy.Subscriber('/camera/rgb/image_raw', Image, image_callback)
+if __name__ == '__main__':
+    classNames = ["turtlebot", "rosbot", "3D printer", "chair", "table", "person"]
 
-# Spin until the node is stopped
-rospy.spin()
+    # Initialize the ROS node
+    rospy.init_node('object_detection_service')
+
+    # Create a CvBridge object for converting between ROS and OpenCV images
+    bridge = CvBridge()
+
+    # Initialize the YOLO model
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    model = YOLO("./yolo8s.pt")
+    model.to(device)
+
+    image_sub = rospy.Service('/detect_objects', Image, detect_callback)
+
+    # Spin until the node is stopped
+    rospy.spin()
