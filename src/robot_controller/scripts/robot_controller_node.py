@@ -6,10 +6,8 @@ from robot_controller.srv import DetectObjects
 from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 
-from ultralytics import YOLO
 import numpy as np
 import rospy
-import torch
 import math
 import cv2
 
@@ -107,8 +105,8 @@ class RobotController:
     def object_detection_service(self, frame):
         try:
             # Create a service proxy
-            object_detection_service = rospy.ServiceProxy('/object_detection_service', DetectObjects)
-            response = object_detection_service(frame)
+            object_detection_service = rospy.ServiceProxy('/detect_objects', DetectObjects)
+            response = object_detection_service(self.bridge.cv2_to_imgmsg(frame, encoding="bgr8"))
             return response.x1, response.x2, response.y1, response.y2, response.class_name
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
@@ -248,6 +246,8 @@ class RobotController:
             # initializing the frame
             ret, org_frame = self.cap.read()
 
+            cv2.imshow('frame', org_frame)
+
             # Move the robot in a circle
             self.draw_a_circle()
 
@@ -258,7 +258,7 @@ class RobotController:
             self.motion_model(v, w, dt)
 
             # Call the object detection service
-            x1, x2, y1, y2, class_name = self.object_detection_service(self.bridge.cv2_to_imgmsg(org_frame, encoding="bgr8"))
+            x1, x2, y1, y2, class_name = self.object_detection_service(org_frame)
 
             # Call the measurement model function
             distance, bearing = self.calculate_distance_and_angle(x1, x2, y1, y2)
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     rospy.init_node("robot_controller_node")
 
     # Ensuring that the service is running
-    rospy.wait_for_service('/object_detection_service')
+    rospy.wait_for_service('/detect_objects')
 
     # Create an instance of the RobotController class
     robot_controller = RobotController()

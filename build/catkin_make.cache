@@ -1,0 +1,2 @@
+robot_controller
+-DCATKIN_DEVEL_PREFIX=/home/homam/Capstone/devel -DCMAKE_INSTALL_PREFIX=/home/homam/Capstone/install -G Unix Makefiles

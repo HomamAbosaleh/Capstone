@@ -1,19 +1,20 @@
 #! /usr/bin/env python
 
 import rospy
-from sensor_msgs.msg import Image
-from robot_controller.msg import DetectedImage
+from robot_controller.srv import DetectObjects
+from robot_controller.msg import DetectedObject
 from cv_bridge import CvBridge
 import torch
 from ultralytics import YOLO
 
 # Define the image callback function
-def detect_callback(msg):
+def detect_objects(msg):
+    print(msg.image)
     # Convert the ROS image message to an OpenCV image
-    cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+    cv_image = bridge.imgmsg_to_cv2(msg.image, desired_encoding='bgr8')
 
     # Perform inference
-    results = model(cv_image, stream=True)
+    results = model(cv_image)
 
     # Process the results
     for result in results:
@@ -26,8 +27,8 @@ def detect_callback(msg):
                # class name
                cls = int(box.cls[0])
                class_name = classNames[cls]
-               return DetectedImage(x1, y1, x2, y2, class_name)
-    return None
+               return DetectedObject(x1, y1, x2, y2, class_name)
+    return DetectedObject(-1, -1, -1, -1, "NULL")
 
 
 if __name__ == '__main__':
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     model = YOLO("./yolo8s.pt")
     model.to(device)
 
-    image_sub = rospy.Service('/detect_objects', Image, detect_callback)
+    image_sub = rospy.Service('/detect_objects', DetectObjects, detect_objects)
 
     # Spin until the node is stopped
     rospy.spin()
