@@ -36,8 +36,9 @@ class RobotController:
         # Initialize the EKF publisher
         self.ekf_pub = rospy.Publisher("/ekf_estimate", Odometry, queue_size=10)
 
-        # Initialize detected object
-        self.detected_object = DetectedObject(-1, -1, -1, -1, "NULL")
+        # Initializing distance and bearing
+        self.distance = None
+        self.bearing = None
 
         # Initialize the state of the robot
         """
@@ -90,7 +91,9 @@ class RobotController:
             # Create a service proxy
             #object_detection_service = rospy.ServiceProxy('/detect_objects', DetectObjects)
             #self.detected_object = object_detection_service(msg).object
-            self.detected_object = msg
+            if msg.class_name != "NULL":
+                # Call the measurement model function
+                self.distance, self.bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2)
          except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
        
@@ -235,18 +238,14 @@ class RobotController:
             dt = 0.1  # time step (corresponding to the rate of 10Hz)
             self.motion_model(v, w, dt)
 
-            if self.detected_object.class_name != "NULL":
-                # Call the measurement model function
-                distance, bearing = self.calculate_distance_and_angle(self.detected_object.x1, self.detected_object.x2, self.detected_object.y1, self.detected_object.y2)
-
-                # Only call the EKF function if distance and bearing are not None
-                if distance is not None and bearing is not None:
-                    # Call the EKF function
-                    u = np.array([v, w])
-                    z = np.array([distance, bearing])
-                    x_obj = 0.0
-                    y_obj = 0.0
-                    self.mu, self.Sigma = self.ekf(self.mu, self.Sigma, u, z, x_obj, y_obj)
+            # Only call the EKF function if distance and bearing are not None
+            if self.distance is not None and self.bearing is not None:
+                # Call the EKF function
+                u = np.array([v, w])
+                z = np.array([self.distance, self.bearing])
+                x_obj = 0.0
+                y_obj = 0.0
+                self.mu, self.Sigma = self.ekf(self.mu, self.Sigma, u, z, x_obj, y_obj)
                 
 
             # Sleep for the remainder of the loop
