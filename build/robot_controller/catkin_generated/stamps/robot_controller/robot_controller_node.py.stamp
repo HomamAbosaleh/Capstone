@@ -1,17 +1,16 @@
 #! /usr/bin/env python
 
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, Image as ROSImage
 from nav_msgs.msg import Odometry
 from robot_controller.srv import DetectObjects
 from geometry_msgs.msg import Twist
-from cv_bridge import CvBridge
 
-from ultralytics import YOLO
+
+from PIL import Image as PILImage
 import numpy as np
-import rospy
-import torch
-import math
 import cv2
+import rospy
+import math
 
 
 # Defining Constants
@@ -40,9 +39,6 @@ class RobotController:
             IMG_WIDTH, #display_width,
             IMG_HEIGHT, #display_height,
         ), cv2.CAP_GSTREAMER)
-
-        # Create a CvBridge object for converting between ROS and OpenCV images
-        self.bridge = CvBridge()
         
 
         # Initialize the measurement subscribers
@@ -104,11 +100,20 @@ class RobotController:
         self.v = twist.linear.x
         self.w = twist.angular.z
 
-    def object_detection_service(self, frame):
+    def object_detection_service(self, pil_image):
         try:
+            # From pil image to ros image
+            ros_image = ROSImage()
+            ros_image.height = pil_image.height
+            ros_image.width = pil_image.width
+            ros_image.encoding = "rgb8"
+            ros_image.is_bigendian = False
+            ros_image.step = ros_image.width * 3
+            ros_image.data = np.array(pil_image).tobytes()
+
             # Create a service proxy
-            object_detection_service = rospy.ServiceProxy('/object_detection_service', DetectObjects)
-            response = object_detection_service(frame)
+            object_detection_service = rospy.ServiceProxy('/detect_objects', DetectObjects)
+            response = object_detection_service(ros_image).object
             return response.x1, response.x2, response.y1, response.y2, response.class_name
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
@@ -248,6 +253,10 @@ class RobotController:
             # initializing the frame
             ret, org_frame = self.cap.read()
 
+            # Convert the frame to a PIL Image
+            pil_image = PILImage.fromarray(cv2.cvtColor(org_frame, cv2.COLOR_BGR2RGB))
+
+
             # Move the robot in a circle
             self.draw_a_circle()
 
@@ -258,25 +267,25 @@ class RobotController:
             self.motion_model(v, w, dt)
 
             # Call the object detection service
-            x1, x2, y1, y2, class_name = self.object_detection_service(self.bridge.cv2_to_imgmsg(org_frame, encoding="bgr8"))
+            x1, x2, y1, y2, class_name = self.object_detection_service(pil_image)
 
-            # Call the measurement model function
-            distance, bearing = self.calculate_distance_and_angle(x1, x2, y1, y2)
+            if class_name != "NULL":
+                # Call the measurement model function
+                distance, bearing = self.calculate_distance_and_angle(x1, x2, y1, y2)
 
-            # Only call the EKF function if distance and bearing are not None
-            if distance is not None and bearing is not None:
-                # Call the EKF function
-                u = np.array([v, w])
-                z = np.array([distance, bearing])
-                x_obj = 0.0
-                y_obj = 0.0
-                self.mu, self.Sigma = self.ekf(self.mu, self.Sigma, u, z, x_obj, y_obj)
+                # Only call the EKF function if distance and bearing are not None
+                if distance is not None and bearing is not None:
+                    # Call the EKF function
+                    u = np.array([v, w])
+                    z = np.array([distance, bearing])
+                    x_obj = 0.0
+                    y_obj = 0.0
+                    self.mu, self.Sigma = self.ekf(self.mu, self.Sigma, u, z, x_obj, y_obj)
                 
 
             # Sleep for the remainder of the loop
             rate.sleep()
         self.cap.release()
-        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
@@ -284,7 +293,7 @@ if __name__ == "__main__":
     rospy.init_node("robot_controller_node")
 
     # Ensuring that the service is running
-    rospy.wait_for_service('/object_detection_service')
+    rospy.wait_for_service('/detect_objects')
 
     # Create an instance of the RobotController class
     robot_controller = RobotController()
