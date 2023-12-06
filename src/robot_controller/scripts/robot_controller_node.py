@@ -208,6 +208,58 @@ class RobotController:
         self.ekf_pub.publish(ekf_msg)
 
         return mu, Sigma
+       
+    def slam(self, u, z):
+        # Time step
+        dt = 0.1
+
+        # Motion model
+        v = u[0]
+        w = u[1]
+        theta = self.mu[2]
+        g = np.array([self.mu[0] + v * dt * np.cos(theta),
+                    self.mu[1] + v * dt * np.sin(theta),
+                    self.mu[2] + w * dt])
+
+        # Jacobian of the motion model
+        G = np.array([[1, 0, -v * dt * np.sin(theta)],
+                    [0, 1, v * dt * np.cos(theta)],
+                    [0, 0, 1]])
+
+        # Predicted state and covariance
+        mu_bar = g
+        Sigma_bar = np.dot(np.dot(G, self.Sigma), G.T)  + self.R # Add motion noise here
+
+        # Measurement model
+        for i in range(len(z)):
+            dx = z[i][0] - mu_bar[0]
+            dy = z[i][1] - mu_bar[1]
+            h = np.array([np.sqrt(dx**2 + dy**2),
+                        np.arctan2(dy, dx) - mu_bar[2]])
+
+            # Jacobian of the measurement model
+            H = np.array([[-dx / np.sqrt(dx**2 + dy**2), -dy / np.sqrt(dx**2 + dy**2), 0],
+                        [dy / (dx**2 + dy**2), -dx / (dx**2 + dy**2), -1]])
+
+            # Kalman gain
+            S = np.dot(H, np.dot(Sigma_bar, H.T)) + self.Q # the innovation (or residual) covariance
+            K = np.dot(Sigma_bar, np.dot(H.T, np.linalg.inv(S)))
+
+            # Updated state and covariance
+            self.mu = mu_bar + np.dot(K, (z[i] - h))
+            self.Sigma = np.dot((np.eye(3) - np.dot(K, H)), Sigma_bar)
+
+            # Update landmark estimates
+            m = np.array([self.mu[0] + z[i][0] * np.cos(z[i][1] + self.mu[2]),
+                        self.mu[1] + z[i][0] * np.sin(z[i][1] + self.mu[2])])
+
+            # Add the landmark to the state vector
+            self.mu = np.hstack((self.mu, m))
+
+            # Add the landmark to the covariance matrix
+            self.Sigma = np.vstack((self.Sigma, np.zeros((2, self.Sigma.shape[1]))))
+            self.Sigma = np.hstack((self.Sigma, np.zeros((self.Sigma.shape[0], 2))))
+            self.Sigma[-2:, -2:] = np.eye(2) * self.Q
     
     def draw_a_circle(self):
         # Create a new Twist message
