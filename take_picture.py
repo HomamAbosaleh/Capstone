@@ -32,7 +32,7 @@ def gstreamer_pipeline(
     )
 
 # Initialize the image counter
-img_counter = 141
+img_counter = 502
 
 # Create the images directory if it doesn't exist
 if not os.path.exists('images'):
