@@ -103,13 +103,13 @@ def camera_publisher():
                     cls = int(box.cls[0])
                     class_name = classNames[cls]
                     # Your existing code for processing the results goes here
-                    if class_name != "chair":
-                        publisher.publish(DetectedObject(-1, -1, -1, -1, "NULL"))
-                        continue
+                    # if class_name != "chair":
+                    #     publisher.publish(DetectedObject(-1, -1, -1, -1, "NULL"))
+                    #     continue
 
                     confidence = math.ceil((box.conf[0]*100))/100
                     if confidence < 0.50:
-            	        continue
+                        continue
                     # box coordinates
                     x1, y1, x2, y2 = box.xyxy[0]
                     publisher.publish(DetectedObject(int(x1), int(y1), int(x2), int(y2), class_name))

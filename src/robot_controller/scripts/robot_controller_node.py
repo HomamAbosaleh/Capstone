@@ -100,7 +100,8 @@ class RobotController:
             #self.detected_object = object_detection_service(msg).object
             if msg.class_name != "NULL":
                 # Call the measurement model function
-                self.distance, self.bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2, msg.class_name)
+                if msg.class_name == "small chair" or msg.class_name == "big bin" or msg.class_name == "medium bin" or msg.class_name == "small bin":
+                    self.distance, self.bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2, msg.class_name)
          except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
        
@@ -116,8 +117,10 @@ class RobotController:
         focal_in_meter = 2.96e-3  # Convert from millimeters to meters
 
         angle_in_radians = math.atan((difference_object_image * px_in_meter) / focal_in_meter)
+        print("Class name: ", class_name)
         print("Distance in centimeters: ", distance_in_meters)
         print("Bearning angle in radians: ", angle_in_radians)
+        print("==================================================================================")
 
         return distance_in_meters, angle_in_radians
 
