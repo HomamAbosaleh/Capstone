@@ -27,7 +27,7 @@ def detect_objects(req):
             cls = int(box.cls[0])
             class_name = classNames[cls]
             # Your existing code for processing the results goes here
-            if class_name != "chair":
+            if class_name != "small chair":
                return DetectedObject(-1, -1, -1, -1, "NULL")
             print(box.xyxy[0])
             # box coordinates
@@ -36,7 +36,7 @@ def detect_objects(req):
     return DetectedObject(-1, -1, -1, -1, "NULL")
 
 if __name__ == '__main__':
-    classNames = ["turtlebot", "rosbot", "3D printer", "chair", "table", "person"]
+    classNames = ["turtlebot", "rosbot", "3D printer", "small chair", "big chair", "small table", "big table 1", "big table 2", "big table 3", "person", "big bin", "medium bin", "small bin"]
 
     # Initialize the ROS node
     rospy.init_node('object_detection_service')

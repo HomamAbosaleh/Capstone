@@ -16,6 +16,13 @@ import math
 IMG_WIDTH = 416
 IMG_HEIGHT = 416
 
+CLASS_EQUATIONS = {
+    'small chair': lambda x1, x2, y1, y2: 549 * np.exp(-0.0001644 * (x2 - x1) * (y2 - y1)) + 238.6 * np.exp(-1.342e-05 * (x2 - x1) * (y2 - y1)),
+    'big bin': lambda x1, x2, y1, y2: 510.4 * np.exp(-6.066e-05 * (x2 - x1) * (y2 - y1)) + 75.81 * np.exp(3.734e-06 * (x2 - x1) * (y2 - y1)),
+    'medium bin': lambda x1, x2, y1, y2: 438.8 * np.exp(-0.0002002 * (x2 - x1) * (y2 - y1)) + 239.7 * np.exp(-1.652e-05 * (x2 - x1) * (y2 - y1)),
+    'small bin': lambda x1, x2, y1, y2: 478.2 * np.exp(-0.000597 * (x2 - x1) * (y2 - y1)) + 254 * np.exp(-4.499e-05 * (x2 - x1) * (y2 - y1)),
+}
+
 
 class RobotController:
     def __init__(self):
@@ -93,19 +100,13 @@ class RobotController:
             #self.detected_object = object_detection_service(msg).object
             if msg.class_name != "NULL":
                 # Call the measurement model function
-                self.distance, self.bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2)
+                self.distance, self.bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2, msg.class_name)
          except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
        
-    def calculate_distance_and_angle(self, x1, x2, y1, y2):
+    def calculate_distance_and_angle(self, x1, x2, y1, y2, class_name):
         # Calculate the distance to the object
-        #! Coefficients
-        a = 394.1
-        b = -0.000153
-        c = 242.1
-        d = -1.367e-05
-        #! 
-        distance_in_meters = a * np.exp(b * (x2 - x1) * (y2 - y1)) + c * np.exp(d * (x2 - x1) * (y2 - y1))
+        distance_in_meters = CLASS_EQUATIONS[class_name](x1, x2, y1, y2)
         
         # Calculate the bearing angle to the object
         middle_point_x = (x2 + x1) / 2.0
