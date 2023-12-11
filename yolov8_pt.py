@@ -60,7 +60,7 @@ def calculate_bearning_angle(img_w, x1, x2):
 
    
 
-classNames = ["turtlebot", "rosbot", "3D printer", "chair", "table", "person"]
+classNames = ['turtlebot', 'rosbot', '3D printer', 'small chair', 'big chair', 'small table', 'big table 1', 'big table 2', 'big table 3', 'person', 'big bin', 'medium bin', 'small bin']
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -89,13 +89,13 @@ while(True):
             # class name
             cls = int(box.cls[0])
             class_name = classNames[cls]
-            #print("Class name -->", class_name)
-            if class_name != "chair":
+            if class_name != 'small bin':
             	continue
+            print("Class name -->", class_name)
             # confidence
             confidence = math.ceil((box.conf[0]*100))/100
             #if confidence < 0.50:
-            	#continue
+            #	continue
             
             confidence_str = str(confidence)  # Convert confidence to string
             #print("Confidence --->",confidence)
@@ -114,13 +114,13 @@ while(True):
             cv2.circle(org_frame, (int(frame.shape[1]/2), int(frame.shape[0]/2)), radius=5, color=(0, 255, 0), thickness=-1)
 
             # corner coordinations
-            print(f"Coordinates top left ---> ({x1}, {y1})")
-            print(f"Coordinates bottom right ---> ({x2}, {y2})")
+            #print(f"Coordinates top left ---> ({x1}, {y1})")
+            #print(f"Coordinates bottom right ---> ({x2}, {y2})")
             # width and height
-            #print("Width --->",x2-x1)
-            #print("Height --->",y2-y1)
-            print("Distance --->", calculate_distance(x2-x1, y2-y1))
-            print("Bearing Angle --->", calculate_bearning_angle(frame.shape[1], x1, x2))
+            print("Width --->",x2-x1)
+            print("Height --->",y2-y1)
+            #print("Distance --->", calculate_distance(x2-x1, y2-y1))
+            #print("Bearing Angle --->", calculate_bearning_angle(frame.shape[1], x1, x2))
 
             
             # Concatenate class name and confidence

@@ -10,7 +10,7 @@ import torch
 import numpy as np
 import math
 
-classNames = ["turtlebot", "rosbot", "3D printer", "chair", "table", "person"]
+classNames = ['turtlebot', 'rosbot', '3D printer', 'small chair', 'big chair', 'small table', 'big table 1', 'big table 2', 'big table 3', 'person', 'big bin', 'medium bin', 'small bin']
 
 # Define the gstreamer pipeline
 def gstreamer_pipeline(
