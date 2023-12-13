@@ -58,11 +58,11 @@ def draw_frames(frame, x1, y1, x2, y2, class_name, confidence):
     text = class_name + ' (' + confidence + ')'
 
     # object details
-    org = [x1, y1]
+    org = [x1, y1-5]
     font = cv2.FONT_HERSHEY_SIMPLEX
-    fontScale = 1
+    fontScale = 0.5
     color = (255, 0, 0)
-    thickness = 2
+    thickness = 1
 
     cv2.putText(frame, text, org, font, fontScale, color, thickness)
 
