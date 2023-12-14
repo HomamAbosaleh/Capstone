@@ -116,7 +116,7 @@ class RobotController:
                     landmark.r = distance
                     landmark.phi = bearing
        
-    def calculate_distance_and_angle(self, x1, x2, y1, y2, class_name) -> tuple[float, float]:
+    def calculate_distance_and_angle(self, x1, x2, y1, y2, class_name):
         """
         calculate the distance and angle to the object.
 
@@ -149,7 +149,7 @@ class RobotController:
 
         return distance_in_meters, angle_in_radians
 
-    def motion_model(self, v, w, dt) -> tuple[float, float, float]:
+    def motion_model(self, v, w, dt):
         """
         Simulate the motion of the robot.
 
@@ -312,21 +312,21 @@ class RobotController:
         v = u[0]
         w = u[1]
         theta = mu[2]
-        g = mu + F.T @ np.array([v * dt * np.cos(theta),
-                    v * dt * np.sin(theta),
-                    w * dt])
+        g = mu + np.dot(F.T, np.array([v * dt * np.cos(theta),
+                v * dt * np.sin(theta),
+                w * dt]))
         
         # Jacobian of the motion model
-        G = np.eye(3) + F.T @ np.array([[0, 0, -v * dt * np.sin(theta)],
-                    [0, 0, v * dt * np.cos(theta)],
-                    [0, 0, 0]]) @ F
+        G = np.eye(3) + np.dot(np.dot(F.T, np.array([[0, 0, -v * dt * np.sin(theta)],
+                [0, 0, v * dt * np.cos(theta)],
+                [0, 0, 0]])), F)
         
         # Predicted state and covariance
         mu_bar = g
-        Sigma_bar = G @ Sigma @ G.T + F.T @ R @ F # Add motion noise
+        Sigma_bar = np.dot(np.dot(G, Sigma), G.T) + np.dot(np.dot(F.T, R), F) # Add motion noise
 
         # Measurement model
-        Q = np.eye(2) @ 0.01 # measurement noise
+        Q = np.dot(np.eye(2), 0.01) # measurement noise
 
         for i in range(len(z)):
 
@@ -343,7 +343,7 @@ class RobotController:
             #     c[i] = len(self.landmarks) - 1
 
             delta = np.array([mu_bar[3 + 2*i] - mu_bar[0], mu_bar[3 + 2*i + 1] - mu_bar[1]])
-            q = delta.T @ delta
+            q = np.dot(delta.T, delta)
             z_hat = np.array([np.sqrt(q),
                             np.arctan2(delta[1], delta[0]) - mu_bar[2]]) # predicted measurement h
 
@@ -363,13 +363,13 @@ class RobotController:
                             [zeros_2x3, zeros_2x2j_2, identity_2x2, zeros_2x2N_2j]])
 
             # Jacobian of the measurement model
-            H = 1 / q @ np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
-                        [delta[1], - delta[0], - q, - delta[1], delta[0]]]) @ Fxj
+            H = 1 / q * np.dot(np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
+                    [delta[1], - delta[0], - q, - delta[1], delta[0]]]), Fxj))
 
             # Kalman gain
-            K = Sigma_bar @ H.T @ np.linalg.inv(H @ Sigma_bar @ H.T + Q)
-            mu_bar = mu_bar + K @ (z[i] - z_hat)
-            Sigma_bar = (np.eye(len(mu_bar)) - K @ H) @ Sigma_bar
+            K = np.dot(np.dot(Sigma_bar, H.T), np.linalg.inv(np.dot(np.dot(H, Sigma_bar), H.T) + Q))
+            mu_bar = mu_bar + np.dot(K, (z[i] - z_hat))
+            Sigma_bar = np.dot((np.eye(len(mu_bar)) - np.dot(K, H)), Sigma_bar)
 
 
         return mu_bar, Sigma_bar
