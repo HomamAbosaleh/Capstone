@@ -158,33 +158,31 @@ class RobotController:
             w: Angular velocity
             dt: Time step
 
-        Returns:
+        Updates:
             x: x position
             y: y position
             theta: orientation
         """
         # Update the orientation
-        theta += w * dt
-        theta = np.arctan2(np.sin(theta), np.cos(theta))  # Normalize to [-pi, pi]
+        self.theta += w * dt
+        self.theta = np.arctan2(np.sin(self.theta), np.cos(self.theta))  # Normalize to [-pi, pi]
 
         # Update the position
-        x += v * np.cos(theta) * dt
-        y += v * np.sin(theta) * dt
+        self.x += v * np.cos(self.theta) * dt
+        self.y += v * np.sin(self.theta) * dt
 
         # Create an Odometry message
         odom_msg = Odometry()
-        odom_msg.pose.pose.position.x = x
-        odom_msg.pose.pose.position.y = y
-        odom_msg.pose.pose.orientation.z = np.sin(theta / 2.0)
-        odom_msg.pose.pose.orientation.w = np.cos(theta / 2.0)
+        odom_msg.pose.pose.position.x = self.x
+        odom_msg.pose.pose.position.y = self.y
+        odom_msg.pose.pose.orientation.z = np.sin(self.theta / 2.0)
+        odom_msg.pose.pose.orientation.w = np.cos(self.theta / 2.0)
 
         # Set the timestamp to the current time
         odom_msg.header.stamp = rospy.Time.now()
 
         # Publish the Odometry message
         self.motion_model_pub.publish(odom_msg)
-
-        return x, y, theta
     
     # def ekf_predict(self, u, dt, mu, Sigma, R):
     #     # Motion model
