@@ -294,7 +294,7 @@ class RobotController:
 
     #     return mu, Sigma
     
-    def EKF_SLAM(self, mu, Sigma, u, z, R, dt): # https://ais.informatik.uni-freiburg.de/teaching/ws15/mapping/pdf/slam05-ekf-slam.pdf
+    def EKF_SLAM(self, mu, Sigma, u, z, R, dt): # http://ais.informatik.uni-freiburg.de/teaching/ws15/mapping/pdf/slam05-ekf-slam.pdf
         """
         Parameters:
             mu: mean of the state
@@ -326,11 +326,11 @@ class RobotController:
         # Measurement model
         Q = np.dot(np.eye(2), 0.01) # measurement noise
 
-        for i in range(len(z)):
+        for j in range(len(z)):
 
-            # if c[i] == -1: # if the landmark is not in the state vector
+            # if c[j] == -1: # if the landmark is not in the state vector
             #     # Add the landmark to the state vector
-            #     self.landmarks.append(Landmark(z[i][0], z[i][1], z[i][2], mu_bar[0] + z[i][0] * np.cos(z[i][1] + mu_bar[2]), mu_bar[1] + z[i][0] * np.sin(z[i][1] + mu_bar[2])))
+            #     self.landmarks.append(Landmark(z[j][0], z[j][1], z[j][2], mu_bar[0] + z[j][0] * np.cos(z[j][1] + mu_bar[2]), mu_bar[1] + z[j][0] * np.sin(z[j][1] + mu_bar[2])))
 
             #     # Add the landmark to the covariance matrix
             #     Sigma_bar = np.vstack((Sigma_bar, np.zeros((2, Sigma_bar.shape[1]))))
@@ -338,9 +338,9 @@ class RobotController:
             #     Sigma_bar[-2:, -2:] = np.eye(2) * Q
 
             #     # Update the landmark index
-            #     c[i] = len(self.landmarks) - 1
+            #     c[j] = len(self.landmarks) - 1
 
-            delta = np.array([mu_bar[3 + 2*i] - mu_bar[0], mu_bar[3 + 2*i + 1] - mu_bar[1]])
+            delta = np.array([mu_bar[3 + 2*j] - mu_bar[0], mu_bar[3 + 2*j + 1] - mu_bar[1]])
             q = np.dot(delta.T, delta)
             z_hat = np.array([np.sqrt(q),
                             np.arctan2(delta[1], delta[0]) - mu_bar[2]]) # predicted measurement h
@@ -349,12 +349,12 @@ class RobotController:
             #! Create the blocks
             identity_3x3 = np.eye(3)
             zeros_2x3 = np.zeros((2, 3))
-            zeros_3x2j_2 = np.zeros((3, 2*i - 2))
-            zeros_2x2j_2 = np.zeros((2, 2*i - 2))
+            zeros_3x2j_2 = np.zeros((3, 2*(j + 1) - 2))
+            zeros_2x2j_2 = np.zeros((2, 2*(j + 1) - 2))
             zeros_3x3 = np.zeros((3, 3))
             identity_2x2 = np.eye(2)
-            zeros_3x2N_2j = np.zeros((3, 2*len(z) - 2*i))
-            zeros_2x2N_2j = np.zeros((2, 2*len(z) - 2*i))
+            zeros_3x2N_2j = np.zeros((3, 2*len(z) - 2*(j + 1)))
+            zeros_2x2N_2j = np.zeros((2, 2*len(z) - 2*(j + 1)))
 
             #! Create the matrix
             Fxj = np.block([[identity_3x3, zeros_3x2j_2, zeros_3x3, zeros_3x2N_2j],
@@ -366,7 +366,7 @@ class RobotController:
 
             # Kalman gain
             K = np.dot(np.dot(Sigma_bar, H.T), np.linalg.inv(np.dot(np.dot(H, Sigma_bar), H.T) + Q))
-            mu_bar = mu_bar + np.dot(K, (z[i] - z_hat))
+            mu_bar = mu_bar + np.dot(K, (z[j] - z_hat))
             Sigma_bar = np.dot((np.eye(len(mu_bar)) - np.dot(K, H)), Sigma_bar)
 
 
