@@ -372,8 +372,8 @@ class RobotController:
             Fxj = np.vstack([identity_3xN, bottom_part])
 
             # Jacobian of the measurement model
-            H = 1 / q * np.dot(np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
-                    [delta[1], - delta[0], - q, - delta[1], delta[0]]]), Fxj))
+            H = (1 / q) * np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
+                    [delta[1], - delta[0], - q, - delta[1], delta[0]]]), Fxj)
 
             # Kalman gain
             K = np.dot(np.dot(Sigma_bar, H.T), np.linalg.inv(np.dot(np.dot(H, Sigma_bar), H.T) + Q))
