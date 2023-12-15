@@ -107,7 +107,7 @@ class RobotController:
             # Call the measurement function based on the class name
             if msg.class_name == "small chair" or msg.class_name == "big bin" or msg.class_name == "medium bin" or msg.class_name == "small bin":
                 distance, bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2, msg.class_name)
-                landmark = next((landmark for landmark in self.landmarks if landmark.class_signature == msg.class_name), None)
+                landmark = next((landmark for landmark in self.landmarks if landmark.signature == msg.class_name), None)
                 if(landmark is None):
                     self.landmarks.append(Landmark(distance, bearing, msg.class_name, np.array([self.x + distance * np.cos(bearing + self.theta),
                                         self.y + distance * np.sin(bearing + self.theta)]), np.array([[0.01, 0],
