@@ -315,7 +315,7 @@ class RobotController:
                 w * dt]))
         
         # Jacobian of the motion model
-        G = np.eye(3, len(mu)) + np.dot(np.dot(F.T, np.array([[0, 0, -v * dt * np.sin(theta)],
+        G = np.eye(len(mu), len(mu)) + np.dot(np.dot(F.T, np.array([[0, 0, -v * dt * np.sin(theta)],
                 [0, 0, v * dt * np.cos(theta)],
                 [0, 0, 0]])), F)
         
