@@ -359,9 +359,8 @@ class RobotController:
             # #! Create the matrix
             # Fxj = np.block([[identity_3x3, zeros_3x2j_2, zeros_3x3, zeros_3x2N_2j],
             #                 [zeros_2x3, zeros_2x2j_2, identity_2x2, zeros_2x2N_2j]])
-
             #! Create the top part
-            identity_3xN = np.eye(3, 2*(j + 1) - 2 + 2 + 2*len(z) - 2*(j + 1))
+            identity_3xN = np.eye(3, 3 + 2*(j + 1) - 2 + 2 + 2*len(z) - 2*(j + 1))
 
             #! Create the bottom part
             zeros_2xN = np.zeros((2, 3 + 2*(j + 1) - 2)) # it is 3 + N
