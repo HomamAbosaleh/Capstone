@@ -347,18 +347,30 @@ class RobotController:
 
             # construct Fxj
             #! Create the blocks
-            identity_3x3 = np.eye(3)
-            zeros_2x3 = np.zeros((2, 3))
-            zeros_3x2j_2 = np.zeros((3, 2*(j + 1) - 2))
-            zeros_2x2j_2 = np.zeros((2, 2*(j + 1) - 2))
-            zeros_3x3 = np.zeros((3, 3))
+            # identity_3x3 = np.eye(3)
+            # zeros_2x3 = np.zeros((2, 3))
+            # zeros_3x2j_2 = np.zeros((3, 2*(j + 1) - 2))
+            # zeros_2x2j_2 = np.zeros((2, 2*(j + 1) - 2))
+            # zeros_3x3 = np.zeros((3, 3))
+            # identity_2x2 = np.eye(2)
+            # zeros_3x2N_2j = np.zeros((3, 2*len(z) - 2*(j + 1)))
+            # zeros_2x2N_2j = np.zeros((2, 2*len(z) - 2*(j + 1)))
+
+            # #! Create the matrix
+            # Fxj = np.block([[identity_3x3, zeros_3x2j_2, zeros_3x3, zeros_3x2N_2j],
+            #                 [zeros_2x3, zeros_2x2j_2, identity_2x2, zeros_2x2N_2j]])
+
+            #! Create the top part
+            identity_3xN = np.eye(3, 2*(j + 1) - 2 + 2 + 2*len(z) - 2*(j + 1))
+
+            #! Create the bottom part
+            zeros_2xN = np.zeros((2, 3 + 2*(j + 1) - 2)) # it is 3 + N
             identity_2x2 = np.eye(2)
-            zeros_3x2N_2j = np.zeros((3, 2*len(z) - 2*(j + 1)))
-            zeros_2x2N_2j = np.zeros((2, 2*len(z) - 2*(j + 1)))
+            zeros_2x2N = np.zeros((2, 2*len(z) - 2*(j + 1)))
+            bottom_part = np.hstack([zeros_2xN, identity_2x2, zeros_2x2N])
 
             #! Create the matrix
-            Fxj = np.block([[identity_3x3, zeros_3x2j_2, zeros_3x3, zeros_3x2N_2j],
-                            [zeros_2x3, zeros_2x2j_2, identity_2x2, zeros_2x2N_2j]])
+            Fxj = np.vstack([identity_3xN, bottom_part])
 
             # Jacobian of the measurement model
             H = 1 / q * np.dot(np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
