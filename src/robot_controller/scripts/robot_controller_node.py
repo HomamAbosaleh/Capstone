@@ -458,12 +458,19 @@ class RobotController:
         # Update the list of previously seen landmarks
         previous_landmarks += new_landmarks
 
-        # Update mu_extended and Sigma_extended with new landmarks only
+        # Update mu_extended with new landmarks only
         mu_extended = np.hstack([self.mu_extended] + [landmark.mu.flatten() for landmark in new_landmarks])
+
+        # Create a block diagonal matrix for new landmarks
+        block_matrix = np.block([[np.eye(2) if i != j else landmark.sigma 
+                                for j, landmark in enumerate(new_landmarks)] 
+                                for i, landmark in enumerate(new_landmarks)])
+
+        # Update Sigma_extended with new landmarks only
         Sigma_extended = np.block([[self.Sigma_extended, np.zeros((self.Sigma_extended.shape[0], 2*len(new_landmarks)))], 
-                                    [np.zeros((2*len(new_landmarks), self.Sigma_extended.shape[1])), 
-                                     np.block([landmark.sigma for landmark in new_landmarks])]])
-        
+                                        [np.zeros((2*len(new_landmarks), self.Sigma_extended.shape[1])), 
+                                        block_matrix]])
+            
         return previous_landmarks, mu_extended, Sigma_extended
 
     
