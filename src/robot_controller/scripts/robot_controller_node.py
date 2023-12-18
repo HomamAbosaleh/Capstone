@@ -79,8 +79,10 @@ class RobotController:
         self.landmarks = []
 
         # Initialize the extended mu and Sigma
-        self.mu_extended = None
-        self.Sigma_extended = None
+        self.mu_extended = np.array([self.x, self.y, self.theta])
+        self.Sigma_extended = np.array([[0.01, 0, 0],
+                            [0, 0.01, 0],
+                            [0, 0, 0.01]])
 
     
     def imu_callback(self, msg):
@@ -142,10 +144,10 @@ class RobotController:
         focal_in_meter = 2.96e-3  # Convert from millimeters to meters
 
         angle_in_radians = math.atan((difference_object_image * px_in_meter) / focal_in_meter)
-        print("Class name: ", class_name)
-        print("Distance in centimeters: ", distance_in_meters)
-        print("Bearning angle in radians: ", angle_in_radians)
-        print("==================================================================================")
+        #print("Class name: ", class_name)
+        #print("Distance in centimeters: ", distance_in_meters)
+        #print("Bearning angle in radians: ", angle_in_radians)
+        #print("==================================================================================")
 
         return distance_in_meters, angle_in_radians
 
@@ -434,6 +436,36 @@ class RobotController:
     #         self.Sigma = np.vstack((self.Sigma, np.zeros((2, self.Sigma.shape[1]))))
     #         self.Sigma = np.hstack((self.Sigma, np.zeros((self.Sigma.shape[0], 2))))
     #         self.Sigma[-2:, -2:] = np.eye(2) * self.Q
+
+    # Update function
+    def extend_sigma_mu(self, previous_landmarks, landmarks):
+        """
+        Parameters:
+            previous_landmarks: list of previously seen landmarks
+            landmarks: list of all landmarks
+
+        Returns:
+            previous_landmarks: updated list of previously seen landmarks
+            mu_extended: extended mean of the state
+            Sigma_extended: extended covariance of the state
+        """
+
+        new_landmarks = [landmark for landmark in landmarks if landmark not in previous_landmarks]
+
+        if new_landmarks == []:
+            return previous_landmarks, self.mu_extended, self.Sigma_extended
+        
+        # Update the list of previously seen landmarks
+        previous_landmarks += new_landmarks
+
+        # Update mu_extended and Sigma_extended with new landmarks only
+        mu_extended = np.hstack([self.mu_extended] + [landmark.mu.flatten() for landmark in new_landmarks])
+        Sigma_extended = np.block([[self.Sigma_extended, np.zeros((self.Sigma_extended.shape[0], 2*len(new_landmarks)))], 
+                                    [np.zeros((2*len(new_landmarks), self.Sigma_extended.shape[1])), 
+                                     np.block([landmark.sigma for landmark in new_landmarks])]])
+        
+        return previous_landmarks, mu_extended, Sigma_extended
+
     
     def draw_a_circle(self):
         # Create a new Twist message
@@ -453,6 +485,9 @@ class RobotController:
     def run(self):
         # Set the rate of the loop
         rate = rospy.Rate(10)
+
+        # initiate previously seen landmarks
+        previous_landmarks = []
         
         while not rospy.is_shutdown():
             # Move the robot in a circle
@@ -468,10 +503,7 @@ class RobotController:
                 # Call the EKF function
                 u = np.array([v, w])
                 z = np.vstack([np.array([landmark.r, landmark.phi]) for landmark in self.landmarks])
-                self.mu_extended = np.hstack([self.mu] + [landmark.mu.flatten() for landmark in self.landmarks])
-                self.Sigma_extended = np.block([[self.Sigma, np.zeros((3, 2*len(self.landmarks)))], 
-                           [np.zeros((2*len(self.landmarks), 3)), 
-                            np.block([landmark.sigma for landmark in self.landmarks])]])
+                previously_landmarks, self.mu_extended, self.Sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
                 self.mu_extended, self.Sigma_extended = self.EKF_SLAM(mu=self.mu_extended, Sigma=self.Sigma_extended, u=u, z=z, R=self.R, dt=dt)
                 print("mu_extended: ", self.mu_extended)
                 print("Sigma: ", self.Sigma_extended)
