@@ -523,6 +523,7 @@ class RobotController:
             else:
                 ekf_dict['mu_{}'.format(i)] = [np.array([-1000.0, -1000.0]).flatten()]
                 ekf_dict['sigma_{}'.format(i)] = [np.array([[-1000.0, 0.0], [-1000.0, 0.0]]).flatten()]
+
         ekf_data = pd.DataFrame(ekf_dict, index=[0])
 
         # Check if the file exists
