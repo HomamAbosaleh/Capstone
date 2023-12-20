@@ -11,6 +11,8 @@ import numpy as np
 import rospy
 import math
 
+import pandas as pd
+import os
 
 # Defining Constants
 IMG_WIDTH = 416
@@ -394,9 +396,9 @@ class RobotController:
 
             self.landmarks[j].mu = mu_bar[3 + 2*j:3 + 2*j + 2]
             self.landmarks[j].sigma = Sigma_bar[3 + 2*j:3 + 2*j + 2, 3 + 2*j:3 + 2*j + 2]
-            
 
-
+        self.mu = mu_bar[0:3]
+        self.Sigma = Sigma_bar[0:3, 0:3]
         return mu_bar, Sigma_bar
         
 
@@ -503,6 +505,60 @@ class RobotController:
         # Publish the velocity message
         self.cmd_pub.publish(vel_msg)
 
+    def export_to_csv(self):
+        # Define the CSV file path
+        odom_file = 'odom.csv'    
+        imu_file = 'imu.csv'
+        ekf_file = 'ekf.csv'
+        # Create a DataFrame from mu_extended and Sigma_extended
+
+        ekf_dict = {}
+        ekf_dict['mu'] = self.mu.flatten()
+        ekf_dict['Sigma'] = self.Sigma.flatten()
+        for i, landmark in enumerate(self.landmarks):
+            ekf_dict[f'mu_{i}'] = landmark.mu.flatten()
+            ekf_dict[f'sigma_{i}'] = landmark.sigma.flatten()
+        ekf_data = pd.DataFrame(ekf_dict, index=[0])
+
+        # Check if the file exists
+        if os.path.isfile(ekf_file):
+            # If the file exists, append without writing the header
+            ekf_data.to_csv(ekf_file, mode='a', header=False, index=False)
+        else:
+            # If the file does not exist, write the DataFrame with the header
+            ekf_data.to_csv(ekf_file, index=False)
+            
+        #! odom
+        odom_data = pd.DataFrame({
+            'x': self.odom_x,
+            'y': self.odom_y,
+            'theta': self.odom_theta
+        })
+
+        # Check if the file exists
+        if os.path.isfile(odom_file):
+            # If the file exists, append without writing the header
+            odom_data.to_csv(odom_file, mode='a', header=False, index=False)
+        else:
+            # If the file does not exist, write the DataFrame with the header
+            odom_data.to_csv(odom_file, index=False)
+
+        #! imu
+        imu_data = pd.DataFrame({
+            'x': self.imu_x,
+            'y': self.imu_y,
+            'theta': self.imu_theta
+        })
+
+        # Check if the file exists
+        if os.path.isfile(imu_file):
+            # If the file exists, append without writing the header
+            imu_data.to_csv(imu_file, mode='a', header=False, index=False)
+        else:
+            # If the file does not exist, write the DataFrame with the header
+            imu_data.to_csv(imu_file, index=False)
+        
+
     def run(self):
         # Set the rate of the loop
         rate = rospy.Rate(10)
@@ -520,6 +576,8 @@ class RobotController:
             dt = 0.1  # time step (corresponding to the rate of 10Hz)
             self.motion_model(v, w, dt)
 
+            
+
             if self.landmarks != []:
                 # Call the EKF function
                 u = np.array([v, w])
@@ -529,6 +587,7 @@ class RobotController:
                 print("mu_extended: ", self.mu_extended)
                 print("Sigma: ", self.Sigma_extended)
                 print("==================================================================================")
+                self.export_to_csv()
 
             # Only call the EKF function if distance and bearing are not None
             # if self.distance is not None and self.bearing is not None:
