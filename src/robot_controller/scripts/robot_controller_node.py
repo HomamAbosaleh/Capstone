@@ -513,11 +513,11 @@ class RobotController:
         # Create a DataFrame from mu_extended and Sigma_extended
 
         ekf_dict = {}
-        ekf_dict['mu'] = self.mu.flatten()
-        ekf_dict['Sigma'] = self.Sigma.flatten()
+        ekf_dict['mu'] = np.hstack(self.mu)
+        ekf_dict['Sigma'] = np.hstack(self.Sigma)
         for i, landmark in enumerate(self.landmarks):
-            ekf_dict[f'mu_{i}'] = landmark.mu.flatten()
-            ekf_dict[f'sigma_{i}'] = landmark.sigma.flatten()
+            ekf_dict[f'mu_{i}'] = np.hstack(landmark.mu)
+            ekf_dict[f'sigma_{i}'] = np.hstack(landmark.sigma)
         ekf_data = pd.DataFrame(ekf_dict, index=[0])
 
         # Check if the file exists
