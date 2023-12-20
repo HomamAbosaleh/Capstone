@@ -1,5 +1,5 @@
 from ultralytics import YOLO
-import torch
+#import torch
 import numpy as np
 import math
 import cv2
@@ -62,13 +62,13 @@ def calculate_bearning_angle(img_w, x1, x2):
 
 classNames = ['turtlebot', 'rosbot', '3D printer', 'small chair', 'big chair', 'small table', 'big table 1', 'big table 2', 'big table 3', 'person', 'big bin', 'medium bin', 'small bin']
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
-model = YOLO("./yolo8s.pt")
+model = YOLO("./test.engine")
 
-model.to(device)
+#model.to(device)
 
 while(True):
     ret, org_frame = cap.read()

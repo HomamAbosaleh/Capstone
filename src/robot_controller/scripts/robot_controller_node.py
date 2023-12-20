@@ -513,11 +513,16 @@ class RobotController:
         # Create a DataFrame from mu_extended and Sigma_extended
 
         ekf_dict = {}
-        ekf_dict['mu'] = self.mu.flatten()
-        ekf_dict['Sigma'] = self.Sigma.flatten()
-        for i, landmark in enumerate(self.landmarks):
-            ekf_dict[f'mu_{i}'] = landmark.mu.flatten()
-            ekf_dict[f'sigma_{i}'] = landmark.sigma.flatten()
+        ekf_dict['mu'] = [self.mu.flatten()]
+        ekf_dict['sigma'] = [self.Sigma.flatten()]
+        
+        for i in range(3):
+            if i < len(self.landmarks) and self.landmarks[i] is not None:
+                ekf_dict['mu_{}'.format(i)] = [self.landmarks[i].mu.flatten()]
+                ekf_dict['sigma_{}'.format(i)] = [self.landmarks[i].sigma.flatten()]
+            else:
+                ekf_dict['mu_{}'.format(i)] = [np.array([-1000.0, -1000.0]).flatten()]
+                ekf_dict['sigma_{}'.format(i)] = [np.array([[-1000.0, 0.0], [-1000.0, 0.0]]).flatten()]
         ekf_data = pd.DataFrame(ekf_dict, index=[0])
 
         # Check if the file exists
@@ -530,9 +535,9 @@ class RobotController:
             
         #! odom
         odom_data = pd.DataFrame({
-            'x': self.odom_x,
-            'y': self.odom_y,
-            'theta': self.odom_theta
+            'x': [self.odom_x],
+            'y': [self.odom_y],
+            'theta': [self.odom_theta]
         })
 
         # Check if the file exists
@@ -545,9 +550,9 @@ class RobotController:
 
         #! imu
         imu_data = pd.DataFrame({
-            'x': self.imu_x,
-            'y': self.imu_y,
-            'theta': self.imu_theta
+            'x': [self.imu_x],
+            'y': [self.imu_y],
+            'theta': [self.imu_theta]
         })
 
         # Check if the file exists
@@ -587,7 +592,7 @@ class RobotController:
                 print("mu_extended: ", self.mu_extended)
                 print("Sigma: ", self.Sigma_extended)
                 print("==================================================================================")
-                self.export_to_csv()
+            self.export_to_csv()
 
             # Only call the EKF function if distance and bearing are not None
             # if self.distance is not None and self.bearing is not None:
