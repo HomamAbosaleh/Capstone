@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from sensor_msgs.msg import Imu, Image
+from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 from robot_controller.msg import DetectedObject
 from geometry_msgs.msg import Twist
@@ -60,10 +60,18 @@ class RobotController:
         w: angular velocity
         """
         self.x = 0.0
-        self.y = -4.0
+        self.y = 0.0
         self.theta = 0.0
-        self.v = 0.0
-        self.w = 0.0
+        # self.v = 0.0
+        # self.w = 0.0
+
+        self.imu_x = 0.0
+        self.imu_y = 0.0
+        self.imu_theta = 0.0
+
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_theta = 0.0
 
         # Initialize the motion model noise
         self.R = np.array([[0.01, 0, 0],
@@ -90,7 +98,9 @@ class RobotController:
         orientation = msg.orientation
 
         # Update the orientation of the robot
-        self.theta = 2 * np.arctan2(orientation.z, orientation.w)  # Convert quaternion to euler
+        self.imu_x = orientation.x
+        self.imu_y = orientation.y
+        self.imu_theta = 2 * np.arctan2(orientation.z, orientation.w)  # Convert quaternion to euler
 
     def odom_callback(self, msg):
         # Extract the pose and twist from the message
@@ -98,16 +108,16 @@ class RobotController:
         twist = msg.twist.twist
 
         # Update the state of the robot
-        self.x = pose.position.x
-        self.y = pose.position.y
-        self.theta = 2 * np.arctan2(pose.orientation.z, pose.orientation.w)  # Convert quaternion to euler
-        self.v = twist.linear.x
-        self.w = twist.angular.z
+        self.odom_x = pose.position.x
+        self.odom_y = pose.position.y
+        self.odom_theta = 2 * np.arctan2(pose.orientation.z, pose.orientation.w)  # Convert quaternion to euler
+        # self.v = twist.linear.x
+        # self.w = twist.angular.z
 
     def camera_callback(self, msg):
         if msg.class_name != "NULL":
             # Call the measurement function based on the class name
-            if msg.class_name == "small chair" or msg.class_name == "big bin" or msg.class_name == "medium bin" or msg.class_name == "small bin":
+            if msg.class_name == "big bin" or msg.class_name == "medium bin" or msg.class_name == "small bin":
                 distance, bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2, msg.class_name)
                 landmark = next((landmark for landmark in self.landmarks if landmark.signature == msg.class_name), None)
                 if(landmark is None):
@@ -382,6 +392,10 @@ class RobotController:
             mu_bar = mu_bar + np.dot(K, (z[j] - z_hat))
             Sigma_bar = np.dot((np.eye(len(mu_bar)) - np.dot(K, H)), Sigma_bar)
 
+            self.landmarks[j].mu = mu_bar[3 + 2*j:3 + 2*j + 2]
+            self.landmarks[j].sigma = Sigma_bar[3 + 2*j:3 + 2*j + 2, 3 + 2*j:3 + 2*j + 2]
+            
+
 
         return mu_bar, Sigma_bar
         
@@ -464,7 +478,7 @@ class RobotController:
         # Create a block diagonal matrix for new landmarks
         block_matrix = np.block([[np.eye(2) if i != j else landmark.sigma 
                                 for j, landmark in enumerate(new_landmarks)] 
-                                for i, landmark in enumerate(new_landmarks)])
+                                for i, land in enumerate(new_landmarks)])
 
         # Update Sigma_extended with new landmarks only
         Sigma_extended = np.block([[self.Sigma_extended, np.zeros((self.Sigma_extended.shape[0], 2*len(new_landmarks)))], 

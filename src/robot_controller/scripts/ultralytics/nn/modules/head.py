@@ -57,9 +57,13 @@ class Detect(nn.Module):
             cls = x_cat[:, self.reg_max * 4:]
         else:
             box, cls = x_cat.split((self.reg_max * 4, self.nc), 1)
+        conf, label = cls.sigmoid().max(1) #! added
         dbox = dist2bbox(self.dfl(box), self.anchors.unsqueeze(0), xywh=True, dim=1) * self.strides
         y = torch.cat((dbox, cls.sigmoid()), 1)
-        return y if self.export else (y, x)
+        dbox = dbox.transpose(1,2) #! added
+
+        # return y if self.export else (y, x)
+        return (dbox, conf, label) if self.export else (y, x) #! added
 
     def bias_init(self):
         """Initialize Detect() biases, WARNING: requires stride availability."""

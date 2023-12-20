@@ -304,12 +304,14 @@ class Exporter:
         output_names = ['output0', 'output1'] if isinstance(self.model, SegmentationModel) else ['output0']
         dynamic = self.args.dynamic
         if dynamic:
-            dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'}}  # shape(1,3,640,640)
+            # dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'}}  # shape(1,3,640,640)
+            dynamic = {'images': {0: 'batch'}}  # shape(1,3,640,640) #! added
             if isinstance(self.model, SegmentationModel):
                 dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
                 dynamic['output1'] = {0: 'batch', 2: 'mask_height', 3: 'mask_width'}  # shape(1,32,160,160)
             elif isinstance(self.model, DetectionModel):
-                dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+                # dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+                dynamic['output0'] = {0: 'batch'} #! added 
 
         torch.onnx.export(
             self.model.cpu() if dynamic else self.model,  # --dynamic only compatible with cpu
