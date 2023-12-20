@@ -111,7 +111,7 @@ while cap.isOpened():
     trt_outputs = common.do_inference_v2(
         context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream
     )
-    inference_time = (time.perf_counter() - start) * 1000
+    inference_time = (time.perf_counter() - start) * 10000
 
     boxs = trt_outputs[1].reshape([int(trt_outputs[0]), 4])
     for index, box in enumerate(boxs):
