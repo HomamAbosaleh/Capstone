@@ -5,8 +5,6 @@ from nav_msgs.msg import Odometry
 from robot_controller.msg import DetectedObject
 from geometry_msgs.msg import Twist
 
-from robot_controller.srv import DetectObjects
-
 import numpy as np
 import rospy
 import math

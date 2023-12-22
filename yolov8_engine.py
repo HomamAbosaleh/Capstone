@@ -113,41 +113,22 @@ while cap.isOpened():
     )
     inference_time = (time.perf_counter() - start) * 10000
 
-    # Assuming `output` is the output from your TensorRT model
-    boxes, objectness, classes = trt_outputs
+    boxs = trt_outputs[1].reshape([int(trt_outputs[0]), 4])
+    for index, box in enumerate(boxs):
+        if trt_outputs[2][index] < score_threshold:
+            continue
 
-    # Apply a threshold to filter out low-confidence detections
-    indices = np.where(objectness > score_threshold)
+        # Draw bounding box.
+        class_id = int(trt_outputs[3][index])
+        score = trt_outputs[2][index]
+        caption = "{0}({1:.2f})".format(classNames[class_id - 1], score)
 
-    # Draw the bounding boxes and write the confidence scores
-    for i in indices:
-        # Get the bounding box coordinates
-        x, y, w, h = boxes[i]
-        
-        # Convert the coordinates to integers
-        x, y, w, h = map(int, [x, y, w, h])
-        
-        # Draw the bounding box
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        
-        # Write the confidence score
-        cv2.putText(frame, f'{objectness[i]:.2f}', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-    # boxs = trt_outputs[1].reshape([int(trt_outputs[0]), 4])
-    # for index, box in enumerate(boxs):
-    #     if trt_outputs[2][index] < score_threshold:
-    #         continue
-
-    #     # Draw bounding box.
-    #     class_id = int(trt_outputs[3][index])
-    #     score = trt_outputs[2][index]
-    #     caption = "{0}({1:.2f})".format(classNames[class_id - 1], score)
-
-    #     xmin = int(box[0] * w)
-    #     xmax = int(box[2] * w)
-    #     ymin = int(box[1] * h)
-    #     ymax = int(box[3] * h)
-    #     draw_rectangle(frame, (xmin, ymin, xmax, ymax), colors[class_id])
-    #     draw_caption(frame, (xmin, ymin - 10), caption)
+        xmin = int(box[0] * w)
+        xmax = int(box[2] * w)
+        ymin = int(box[1] * h)
+        ymax = int(box[3] * h)
+        draw_rectangle(frame, (xmin, ymin, xmax, ymax), colors[class_id])
+        draw_caption(frame, (xmin, ymin - 10), caption)
 
     # Calc fps.
     elapsed_list.append(inference_time)
