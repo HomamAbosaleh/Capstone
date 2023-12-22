@@ -88,9 +88,9 @@ class RobotController:
 
         # Initialize the extended mu and Sigma
         self.mu_extended = np.array([self.x, self.y, self.theta])
-        self.Sigma_extended = np.array([[0.01, 0, 0],
-                            [0, 0.01, 0],
-                            [0, 0, 0.01]])
+        self.Sigma_extended = np.array([[0, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 0]])
 
     
     def imu_callback(self, msg):
@@ -122,8 +122,8 @@ class RobotController:
                 landmark = next((landmark for landmark in self.landmarks if landmark.signature == msg.class_name), None)
                 if(landmark is None):
                     self.landmarks.append(Landmark(distance, bearing, msg.class_name, np.array([self.x + distance * np.cos(bearing + self.theta),
-                                        self.y + distance * np.sin(bearing + self.theta)]), np.array([[0.01, 0],
-                                            [0, 0.01]])))
+                                        self.y + distance * np.sin(bearing + self.theta)]), np.array([[100, 0],
+                                            [0, 100]])))
                 else:
                     landmark.r = distance
                     landmark.phi = bearing
@@ -153,7 +153,7 @@ class RobotController:
         px_in_meter = 1.12e-6 * (3280/IMG_WIDTH)  # Convert from micrometers to meters
         focal_in_meter = 2.96e-3  # Convert from millimeters to meters
 
-        angle_in_radians = math.atan((difference_object_image * px_in_meter) / focal_in_meter)
+        angle_in_radians = math.atan2(difference_object_image * px_in_meter, focal_in_meter)
         #print("Class name: ", class_name)
         #print("Distance in centimeters: ", distance_in_meters)
         #print("Bearning angle in radians: ", angle_in_radians)
