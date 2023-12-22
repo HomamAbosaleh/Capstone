@@ -107,8 +107,9 @@ def camera_publisher():
                     #     publisher.publish(DetectedObject(-1, -1, -1, -1, "NULL"))
                     #     continue
 
+
                     confidence = math.ceil((box.conf[0]*100))/100
-                    if confidence < 0.70:
+                    if confidence < 0.85:
                         continue
                     # box coordinates
                     x1, y1, x2, y2 = box.xyxy[0]
