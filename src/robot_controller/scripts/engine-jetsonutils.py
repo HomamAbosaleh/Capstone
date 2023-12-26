@@ -1,46 +1,11 @@
-from models import TRTModule  # isort:skip
 import argparse
-from pathlib import Path
-
-import cv2
+import jetson.utils
 import torch
 
 from config import CLASSES, COLORS
+from models import TRTModule
 from models.torch_utils import det_postprocess
 from models.utils import blob, letterbox, path_to_list
-
-
-# Define the gstreamer pipeline
-def gstreamer_pipeline(
-    sensor_id=0,
-    capture_width=416,
-    capture_height=416,
-    display_width=416,
-    display_height=416,
-    framerate=30,
-    flip_method=2,
-):
-    return (
-        "nvarguscamerasrc sensor-id=%d ! "
-        "video/x-raw(memory:NVMM), "
-        "width=(int)%d, height=(int)%d, "
-        "format=(string)NV12, framerate=(fraction)%d/1 ! "
-        "nvvidconv flip-method=%d ! "
-        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
-        "videoconvert ! "
-        "video/x-raw, format=(string)BGR ! appsink"
-        % (
-            sensor_id,
-            capture_width,
-            capture_height,
-            framerate,
-            flip_method,
-            display_width,
-            display_height,
-        )
-    )
-
-cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
 def main(args: argparse.Namespace) -> None:
     device = torch.device(args.device)
@@ -50,10 +15,16 @@ def main(args: argparse.Namespace) -> None:
     # set desired output names order
     Engine.set_desired(['num_dets', 'bboxes', 'scores', 'labels'])
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            print("VideoCapture read return false.")
+    # Create a VideoSource object
+    cap = jetson.utils.videoSource("csi://0", argv=['--input-flip=rotate-180'])
+
+    while True:
+        # Capture the frame
+        frame = cap.Capture()
+
+        # If no frame is captured, break the loop
+        if not frame:
+            print("VideoSource Capture return false.")
             break
 
         draw = frame.copy()
