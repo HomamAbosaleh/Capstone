@@ -1,5 +1,5 @@
 import argparse
-import jetson.utils
+import jetson_utils
 import torch
 
 from config import CLASSES, COLORS
@@ -16,7 +16,7 @@ def main(args: argparse.Namespace) -> None:
     Engine.set_desired(['num_dets', 'bboxes', 'scores', 'labels'])
 
     # Create a VideoSource object
-    cap = jetson.utils.videoSource("csi://0", argv=['--input-flip=rotate-180'])
+    cap = jetson_utils.videoSource("csi://0", argv=['--input-flip=rotate-180'])
 
     while True:
         # Capture the frame
