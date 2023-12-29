@@ -254,18 +254,26 @@ class RobotController:
 
         # EKF prediction
         mu[0:3] = self.motion_model(mu, u, dt)
+        print("This is mu after motion model: ", mu)
+        print("================================================")
         G = self.jacobian_motion_model(mu, u, dt)
+        print("This is jacobian of motion model: ", G)
+        print("================================================")
         Sigma[0:3, 0:3] = np.dot(np.dot(G, Sigma[0:3, 0:3]), G.T) + R
 
         # EKF update for each landmark
         for i in range(len(z)):
             m = mu[3 + 2*i : 5 + 2*i]
+            print("This is the feature_{}: mu {}".format(i, mu))
             h = self.measurement_model(mu, m)
+            print("This is the feature_{}: h {}".format(i, mu))
             H = self.jacobian_measurement_model(mu, m, i)
+            print("This is the feature_{}: H {}".format(i, mu))
             S = np.dot(np.dot(H, Sigma), H.T) + Q
             K = np.dot(np.dot(Sigma, H.T), np.linalg.inv(S))
             mu = mu + np.dot(K, (z[i] - h))
             Sigma = np.dot((np.eye(len(mu)) - np.dot(K, H)), Sigma)
+            print("=================================================")
 
             self.landmarks[i].mu = mu[3 + 2*i:3 + 2*i + 2]
             self.landmarks[i].sigma = Sigma[3 + 2*i:3 + 2*i + 2, 3 + 2*i:3 + 2*i + 2]
@@ -505,7 +513,8 @@ class RobotController:
             dt = 0.1  # time step (corresponding to the rate of 10Hz)
             # self.motion_model(v, w, dt)
             
-
+            print("This is v={}, w={}, dt={}".format(v, w, dt))
+            print("============================================================")
             if self.landmarks != []:
                 # Call the EKF function
                 u = np.array([v, w])
