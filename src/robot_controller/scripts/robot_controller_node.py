@@ -346,7 +346,7 @@ class RobotController:
         
 
     
-    def EKF_SLAM(self, mu, Sigma, u, z, R, dt): # http://ais.informatik.uni-freiburg.de/teaching/ws15/mapping/pdf/slam05-ekf-slam.pdf
+    def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt): # http://ais.informatik.uni-freiburg.de/teaching/ws15/mapping/pdf/slam05-ekf-slam.pdf
         """
         Parameters:
             mu: mean of the state
@@ -380,7 +380,6 @@ class RobotController:
         Sigma_bar = np.dot(np.dot(G, Sigma), G.T) + np.dot(np.dot(F.T, R), F) # Add motion noise
 
         # Measurement model
-        Q = np.dot(np.eye(2), 0.01) # measurement noise
 
         for j in range(len(z)):
 
