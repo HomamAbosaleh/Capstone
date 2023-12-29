@@ -229,8 +229,6 @@ class RobotController:
         dy = m[1] - mu[1]
         # q = dx**2 + dy**2
         # sqrt_q = np.sqrt(q)
-        H = np.array([[-dx / np.sqrt(dx**2 + dy**2), -dy / np.sqrt(dx**2 + dy**2), 0],
-                    [dy / (dx**2 + dy**2), -dx / (dx**2 + dy**2), -1]])
         # H = np.zeros((2, len(mu)))
         # H[0, 0] = -dy / q
         # H[0, 1] = -dx / q
@@ -238,6 +236,13 @@ class RobotController:
         # H[1, 0] = -dx / sqrt_q
         # H[1, 1] = -dy / sqrt_q
         # H[:, 3 + 2*i : 5 + 2*i] = -H[0:2, 0:2]
+        H = np.zeros((2, len(mu)))
+        H[0, 0] = -dx / np.sqrt(dx**2 + dy**2)
+        H[0, 1] = -dy / np.sqrt(dx**2 + dy**2)
+        H[1, 0] = dy / (dx**2 + dy**2)
+        H[1, 1] = -dx / (dx**2 + dy**2)
+        H[1, 2] = -1
+        H[:, 3 + 2*i : 5 + 2*i] = -H[0:2, 0:2]
         return H
 
     def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt):
