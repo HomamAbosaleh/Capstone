@@ -336,6 +336,12 @@ class RobotController:
             mu = mu + np.dot(K, (z[i] - h))
             Sigma = np.dot((np.eye(len(mu)) - np.dot(K, H)), Sigma)
 
+            self.landmarks[i].mu = mu[3 + 2*i:3 + 2*i + 2]
+            self.landmarks[i].sigma = Sigma[3 + 2*i:3 + 2*i + 2, 3 + 2*i:3 + 2*i + 2]
+
+
+        self.mu = mu[0:3]
+        self.Sigma = Sigma[0:3, 0:3]
         return mu, Sigma
         
 
