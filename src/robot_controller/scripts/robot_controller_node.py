@@ -207,6 +207,7 @@ class RobotController:
         g = np.array([mu[0] + v * dt * np.cos(theta),
                       mu[1] + v * dt * np.sin(theta),
                       mu[2] + w * dt])
+        g[2] = np.arctan2(np.sin(g[2]), np.cos(g[2])) # Normalize to [-pi, pi]
         return g
 
     def jacobian_motion_model(self, mu, u, dt):
