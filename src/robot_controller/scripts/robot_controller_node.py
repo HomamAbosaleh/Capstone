@@ -203,10 +203,10 @@ class RobotController:
     def motion_model(self, mu, u, dt):
         v = u[0]
         w = u[1]
-        theta = mu[2]
+        theta = mu[2] + w * dt
         g = np.array([mu[0] + v * dt * np.cos(theta),
                       mu[1] + v * dt * np.sin(theta),
-                      np.arctan2(np.sin(mu[2] + w * dt), np.cos(mu[2] + w * dt))]) # Normalize to [-pi, pi]
+                      np.arctan2(np.sin(theta), np.cos(theta))]) # Normalize to [-pi, pi]
         return g
 
     def jacobian_motion_model(self, mu, u, dt):
@@ -227,15 +227,17 @@ class RobotController:
     def jacobian_measurement_model(self, mu, m, i):
         dx = m[0] - mu[0]
         dy = m[1] - mu[1]
-        q = dx**2 + dy**2
-        sqrt_q = np.sqrt(q)
-        H = np.zeros((2, len(mu)))
-        H[0, 0] = -dy / q
-        H[0, 1] = -dx / q
-        H[0, 2] = -1
-        H[1, 0] = -dx / sqrt_q
-        H[1, 1] = -dy / sqrt_q
-        H[:, 3 + 2*i : 5 + 2*i] = -H[0:2, 0:2]
+        # q = dx**2 + dy**2
+        # sqrt_q = np.sqrt(q)
+        H = np.array([[-dx / np.sqrt(dx**2 + dy**2), -dy / np.sqrt(dx**2 + dy**2), 0],
+                    [dy / (dx**2 + dy**2), -dx / (dx**2 + dy**2), -1]])
+        # H = np.zeros((2, len(mu)))
+        # H[0, 0] = -dy / q
+        # H[0, 1] = -dx / q
+        # H[0, 2] = -1
+        # H[1, 0] = -dx / sqrt_q
+        # H[1, 1] = -dy / sqrt_q
+        # H[:, 3 + 2*i : 5 + 2*i] = -H[0:2, 0:2]
         return H
 
     def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt):
@@ -275,8 +277,8 @@ class RobotController:
             Sigma = np.dot((np.eye(len(mu)) - np.dot(K, H)), Sigma)
             print("=================================================")
 
-            self.landmarks[i].mu = mu[3 + 2*i:3 + 2*i + 2]
-            self.landmarks[i].sigma = Sigma[3 + 2*i:3 + 2*i + 2, 3 + 2*i:3 + 2*i + 2]
+            self.landmarks[i].mu = mu[3 + 2*i:5 + 2*i]
+            self.landmarks[i].sigma = Sigma[3 + 2*i:5 + 2*i, 3 + 2*i:5 + 2*i]
 
 
         self.mu = mu[0:3]
