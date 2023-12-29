@@ -136,7 +136,7 @@ if __name__ == '__main__':
     # Initialize the YOLO model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = YOLO("./yolo8s.pt")
+    model = YOLO("./yolo8m.pt")
     model.to(device)
 
     camera_publisher()
