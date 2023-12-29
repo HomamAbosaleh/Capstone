@@ -16,7 +16,7 @@ def main(args: argparse.Namespace) -> None:
     Engine.set_desired(['num_dets', 'bboxes', 'scores', 'labels'])
 
     # Create a VideoSource object
-    cap = jetson_utils.videoSource("csi://0", argv=['--input-flip=rotate-180'])
+    cap = jetson_utils.videoSource("csi://0", argv=['--input-flip=rotate-180', '--input-width=416', '--input-height=416'])
 
     while True:
         # Capture the frame

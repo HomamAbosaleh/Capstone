@@ -74,14 +74,17 @@ class RobotController:
         self.odom_theta = 0.0
 
         # Initialize the motion model noise
-        self.R = np.array([[0.01, 0, 0],
-                        [0, 0.01, 0],
-                        [0, 0, 0.01]])
+        self.R = np.array([[0.5, 0, 0],
+                        [0, 0.5, 0],
+                        [0, 0, 0.5]])
+        
+        self.Q = np.array([[0.5, 0],
+                        [0, 0.5]])
         
         self.mu = np.array([self.x, self.y, self.theta])
-        self.Sigma = np.array([[0.01, 0, 0],
-                            [0, 0.01, 0],
-                            [0, 0, 0.01]])
+        self.Sigma = np.array([[0, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 0]])
         
         # Initialize the landmark estimates
         self.landmarks = []
@@ -304,7 +307,7 @@ class RobotController:
         H[:, 3 + 2*i : 5 + 2*i] = -H[0:2, 0:2]
         return H
 
-    def EKF_SLAM(self, mu, Sigma, u, z, R, dt):
+    def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt):
         """
         Parameters:
             mu: mean of the state
@@ -328,7 +331,7 @@ class RobotController:
             m = mu[3 + 2*i : 5 + 2*i]
             h = self.measurement_model(mu, m)
             H = self.jacobian_measurement_model(mu, m, i)
-            S = np.dot(np.dot(H, Sigma), H.T) + self.Q
+            S = np.dot(np.dot(H, Sigma), H.T) + Q
             K = np.dot(np.dot(Sigma, H.T), np.linalg.inv(S))
             mu = mu + np.dot(K, (z[i] - h))
             Sigma = np.dot((np.eye(len(mu)) - np.dot(K, H)), Sigma)
@@ -576,7 +579,7 @@ class RobotController:
                 u = np.array([v, w])
                 z = np.vstack([np.array([landmark.r, landmark.phi]) for landmark in self.landmarks])
                 previously_landmarks, self.mu_extended, self.Sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
-                self.mu_extended, self.Sigma_extended = self.EKF_SLAM(mu=self.mu_extended, Sigma=self.Sigma_extended, u=u, z=z, R=self.R, dt=dt)
+                self.mu_extended, self.Sigma_extended = self.EKF_SLAM(mu=self.mu_extended, Sigma=self.Sigma_extended, u=u, z=z, R=self.R, Q=self.Q, dt=dt)
                 print("mu_extended: ", self.mu_extended)
                 print("Sigma: ", self.Sigma_extended)
                 print("==================================================================================")
