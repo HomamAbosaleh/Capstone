@@ -198,75 +198,6 @@ class RobotController:
 
         # Publish the Odometry message
         self.motion_model_pub.publish(odom_msg)
-    
-    # def ekf(self, mu, Sigma, u, z, dt, R, Q, x_obj, y_obj) -> tuple[float, float]:
-    #     """
-    #     ekf: Extended Kalman Filter
-
-    #     Parameters:
-    #         mu: mean of the state
-    #         Sigma: covariance of the state
-    #         u: control input
-    #         z: measurement
-    #         dt: time step
-    #         R: motion noise
-    #         Q: measurement noise
-    #         x_obj: x position of the object
-    #         y_obj: y position of the object
-        
-    #     Returns:
-    #         mu: new mean of the state
-    #         Sigma: new covariance of the state
-    #     """
-    #     # Motion model
-    #     v = u[0]
-    #     w = u[1]
-    #     theta = mu[2]
-    #     g = np.array([mu[0] + v * dt * np.cos(theta),
-    #                 mu[1] + v * dt * np.sin(theta),
-    #                 mu[2] + w * dt])
-
-    #     # Jacobian of the motion model
-    #     G = np.array([[1, 0, -v * dt * np.sin(theta)],
-    #                 [0, 1, v * dt * np.cos(theta)],
-    #                 [0, 0, 1]])
-
-    #     # Predicted state and covariance
-    #     mu_bar = g
-    #     Sigma_bar = np.dot(np.dot(G, Sigma), G.T)  + R # Add motion noise here
-
-    #     # Measurement model
-    #     dx = x_obj - mu_bar[0]
-    #     dy = y_obj - mu_bar[1]
-    #     h = np.array([np.sqrt(dx**2 + dy**2),
-    #                 np.arctan2(dy, dx) - mu_bar[2]])
-
-    #     # Jacobian of the measurement model
-    #     H = np.array([[-dx / np.sqrt(dx**2 + dy**2), -dy / np.sqrt(dx**2 + dy**2), 0],
-    #                 [dy / (dx**2 + dy**2), -dx / (dx**2 + dy**2), -1]])
-
-    #     # Kalman gain
-    #     S = np.dot(H, np.dot(Sigma_bar, H.T)) + Q # the innovation (or residual) covariance
-    #     K = np.dot(Sigma_bar, np.dot(H.T, np.linalg.inv(S)))
-
-    #     # Updated state and covariance
-    #     mu = mu_bar + np.dot(K, (z - h))
-    #     Sigma = np.dot((np.eye(3) - np.dot(K, H)), Sigma_bar)
-
-    #     # # Create an Odometry message for the EKF estimate
-    #     # ekf_msg = Odometry()
-    #     # ekf_msg.pose.pose.position.x = mu[0]
-    #     # ekf_msg.pose.pose.position.y = mu[1]
-    #     # ekf_msg.pose.pose.orientation.z = np.sin(mu[2] / 2.0)
-    #     # ekf_msg.pose.pose.orientation.w = np.cos(mu[2] / 2.0)
-
-    #     # # Set the timestamp to the current time
-    #     # ekf_msg.header.stamp = rospy.Time.now()
-
-    #     # # Publish the EKF estimate
-    #     # self.ekf_pub.publish(ekf_msg)
-
-    #     return mu, Sigma
         
     # http://wavelab.uwaterloo.ca/sharedata/ME597/ME597_Lecture_Slides/ME597-6-MappingII.pdf
     # def motion_model(self, mu, u, dt):
@@ -396,7 +327,7 @@ class RobotController:
             #     c[j] = len(self.landmarks) - 1
 
             delta = np.array([mu_bar[3 + 2*j] - mu_bar[0], mu_bar[3 + 2*j + 1] - mu_bar[1]])
-            q = np.dot(delta.T, delta)
+            q = np.dot(delta.T, delta) # x^2 + y^2
             z_hat = np.array([np.sqrt(q),
                             np.arctan2(delta[1], delta[0]) - mu_bar[2]]) # predicted measurement h
 
@@ -427,8 +358,10 @@ class RobotController:
             Fxj = np.vstack([identity_3xN, bottom_part])
 
             # Jacobian of the measurement model
-            H = (1 / q) * np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
-                    [delta[1], - delta[0], - q, - delta[1], delta[0]]]), Fxj)
+            # H = (1 / q) * np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
+            #         [delta[1], - delta[0], - q, - delta[1], delta[0]]]), Fxj)
+            H = np.dot(np.array([[delta[1]/q, - delta[0]/q, -1, -delta[1]/q, delta[0]/q],
+                    [-delta[0]/np.sqrt(q), - delta[1]/np.sqrt(q), 0, delta[0]/np.sqrt(q), delta[1]/np.sqrt(q)]]), Fxj)
 
             # Kalman gain
             K = np.dot(np.dot(Sigma_bar, H.T), np.linalg.inv(np.dot(np.dot(H, Sigma_bar), H.T) + Q))
