@@ -74,12 +74,12 @@ class RobotController:
         self.odom_theta = 0.0
 
         # Initialize the motion model noise
-        self.R = np.array([[0.5, 0, 0],
-                        [0, 0.5, 0],
-                        [0, 0, 0.5]])
+        self.R = np.array([[0.05, 0, 0],
+                        [0, 0.05, 0],
+                        [0, 0, 0.05]])
         
-        self.Q = np.array([[0.5, 0],
-                        [0, 0.5]])
+        self.Q = np.array([[0.05, 0],
+                        [0, 0.05]])
         
         self.mu = np.array([self.x, self.y, self.theta])
         self.Sigma = np.array([[0, 0, 0],
@@ -164,120 +164,81 @@ class RobotController:
 
         return distance_in_meters, angle_in_radians
 
-    def motion_model(self, v, w, dt):
-        """
-        Simulate the motion of the robot.
+    # def motion_model(self, v, w, dt):
+    #     """
+    #     Simulate the motion of the robot.
 
-        Parameters:
-            v: Linear velocity
-            w: Angular velocity
-            dt: Time step
+    #     Parameters:
+    #         v: Linear velocity
+    #         w: Angular velocity
+    #         dt: Time step
 
-        Updates:
-            x: x position
-            y: y position
-            theta: orientation
-        """
-        # Update the orientation
-        self.theta += w * dt
-        self.theta = np.arctan2(np.sin(self.theta), np.cos(self.theta))  # Normalize to [-pi, pi]
+    #     Updates:
+    #         x: x position
+    #         y: y position
+    #         theta: orientation
+    #     """
+    #     # Update the orientation
+    #     self.theta += w * dt
+    #     self.theta = np.arctan2(np.sin(self.theta), np.cos(self.theta))  # Normalize to [-pi, pi]
 
-        # Update the position
-        self.x += v * np.cos(self.theta) * dt
-        self.y += v * np.sin(self.theta) * dt
+    #     # Update the position
+    #     self.x += v * np.cos(self.theta) * dt
+    #     self.y += v * np.sin(self.theta) * dt
 
-        # Create an Odometry message
-        odom_msg = Odometry()
-        odom_msg.pose.pose.position.x = self.x
-        odom_msg.pose.pose.position.y = self.y
-        odom_msg.pose.pose.orientation.z = np.sin(self.theta / 2.0)
-        odom_msg.pose.pose.orientation.w = np.cos(self.theta / 2.0)
+    #     # Create an Odometry message
+    #     odom_msg = Odometry()
+    #     odom_msg.pose.pose.position.x = self.x
+    #     odom_msg.pose.pose.position.y = self.y
+    #     odom_msg.pose.pose.orientation.z = np.sin(self.theta / 2.0)
+    #     odom_msg.pose.pose.orientation.w = np.cos(self.theta / 2.0)
 
-        # Set the timestamp to the current time
-        odom_msg.header.stamp = rospy.Time.now()
+    #     # Set the timestamp to the current time
+    #     odom_msg.header.stamp = rospy.Time.now()
 
-        # Publish the Odometry message
-        self.motion_model_pub.publish(odom_msg)
+    #     # Publish the Odometry message
+    #     self.motion_model_pub.publish(odom_msg)
         
     # http://wavelab.uwaterloo.ca/sharedata/ME597/ME597_Lecture_Slides/ME597-6-MappingII.pdf
-    # def motion_model(self, mu, u, dt):
-    #     v = u[0]
-    #     w = u[1]
-    #     theta = mu[2]
-    #     g = np.array([mu[0] + v * dt * np.cos(theta),
-    #                   mu[1] + v * dt * np.sin(theta),
-    #                   mu[2] + w * dt])
-    #     return g
+    def motion_model(self, mu, u, dt):
+        v = u[0]
+        w = u[1]
+        theta = mu[2]
+        g = np.array([mu[0] + v * dt * np.cos(theta),
+                      mu[1] + v * dt * np.sin(theta),
+                      mu[2] + w * dt])
+        return g
 
-    # def jacobian_motion_model(self, mu, u, dt):
-    #     v = u[0]
-    #     theta = mu[2]
-    #     G = np.eye(3)
-    #     G[0, 2] = -v * dt * np.sin(theta)
-    #     G[1, 2] = v * dt * np.cos(theta)
-    #     return G
+    def jacobian_motion_model(self, mu, u, dt):
+        v = u[0]
+        theta = mu[2]
+        G = np.eye(3)
+        G[0, 2] = -v * dt * np.sin(theta)
+        G[1, 2] = v * dt * np.cos(theta)
+        return G
 
-    # def measurement_model(self, mu, m):
-    #     dx = m[0] - mu[0]
-    #     dy = m[1] - mu[1]
-    #     r = np.sqrt(dx**2 + dy**2)
-    #     phi = np.arctan2(dy, dx) - mu[2]
-    #     return np.array([r, phi])
+    def measurement_model(self, mu, m):
+        dx = m[0] - mu[0]
+        dy = m[1] - mu[1]
+        r = np.sqrt(dx**2 + dy**2)
+        phi = np.arctan2(dy, dx) - mu[2]
+        return np.array([r, phi])
 
-    # def jacobian_measurement_model(self, mu, m, i):
-    #     dx = m[0] - mu[0]
-    #     dy = m[1] - mu[1]
-    #     q = dx**2 + dy**2
-    #     sqrt_q = np.sqrt(q)
-    #     H = np.zeros((2, len(mu)))
-    #     H[0, 0] = -dy / q
-    #     H[0, 1] = -dx / q
-    #     H[0, 2] = -1
-    #     H[1, 0] = -dx / sqrt_q
-    #     H[1, 1] = -dy / sqrt_q
-    #     H[:, 3 + 2*i : 5 + 2*i] = -H[0:2, 0:2]
-    #     return H
+    def jacobian_measurement_model(self, mu, m, i):
+        dx = m[0] - mu[0]
+        dy = m[1] - mu[1]
+        q = dx**2 + dy**2
+        sqrt_q = np.sqrt(q)
+        H = np.zeros((2, len(mu)))
+        H[0, 0] = -dy / q
+        H[0, 1] = -dx / q
+        H[0, 2] = -1
+        H[1, 0] = -dx / sqrt_q
+        H[1, 1] = -dy / sqrt_q
+        H[:, 3 + 2*i : 5 + 2*i] = -H[0:2, 0:2]
+        return H
 
-    # def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt):
-    #     """
-    #     Parameters:
-    #         mu: mean of the state
-    #         Sigma: covariance of the state
-    #         u: control input
-    #         z: measurements of all the landmarks
-    #         R: motion noise
-        
-    #     Returns:
-    #         mu: new mean of the state
-    #         Sigma: new covariance of the state
-    #     """
-
-    #     # EKF prediction
-    #     mu[0:3] = self.motion_model(mu, u, dt)
-    #     G = self.jacobian_motion_model(mu, u, dt)
-    #     Sigma[0:3, 0:3] = np.dot(np.dot(G, Sigma[0:3, 0:3]), G.T) + R
-
-    #     # EKF update for each landmark
-    #     for i in range(len(z)):
-    #         m = mu[3 + 2*i : 5 + 2*i]
-    #         h = self.measurement_model(mu, m)
-    #         H = self.jacobian_measurement_model(mu, m, i)
-    #         S = np.dot(np.dot(H, Sigma), H.T) + Q
-    #         K = np.dot(np.dot(Sigma, H.T), np.linalg.inv(S))
-    #         mu = mu + np.dot(K, (z[i] - h))
-    #         Sigma = np.dot((np.eye(len(mu)) - np.dot(K, H)), Sigma)
-
-    #         self.landmarks[i].mu = mu[3 + 2*i:3 + 2*i + 2]
-    #         self.landmarks[i].sigma = Sigma[3 + 2*i:3 + 2*i + 2, 3 + 2*i:3 + 2*i + 2]
-
-
-    #     self.mu = mu[0:3]
-    #     self.Sigma = Sigma[0:3, 0:3]
-    #     return mu, Sigma
-        
-
-    
-    def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt): # http://ais.informatik.uni-freiburg.de/teaching/ws15/mapping/pdf/slam05-ekf-slam.pdf
+    def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt):
         """
         Parameters:
             mu: mean of the state
@@ -285,95 +246,134 @@ class RobotController:
             u: control input
             z: measurements of all the landmarks
             R: motion noise
-          
+        
         Returns:
             mu: new mean of the state
             Sigma: new covariance of the state
         """
 
-        F = np.eye(3, len(mu))
+        # EKF prediction
+        mu[0:3] = self.motion_model(mu, u, dt)
+        G = self.jacobian_motion_model(mu, u, dt)
+        Sigma[0:3, 0:3] = np.dot(np.dot(G, Sigma[0:3, 0:3]), G.T) + R
 
-        # Calculate motion model
-        v = u[0]
-        w = u[1]
-        theta = mu[2]
-        g = mu + np.dot(F.T, np.array([v * dt * np.cos(theta),
-                v * dt * np.sin(theta),
-                w * dt]))
+        # EKF update for each landmark
+        for i in range(len(z)):
+            m = mu[3 + 2*i : 5 + 2*i]
+            h = self.measurement_model(mu, m)
+            H = self.jacobian_measurement_model(mu, m, i)
+            S = np.dot(np.dot(H, Sigma), H.T) + Q
+            K = np.dot(np.dot(Sigma, H.T), np.linalg.inv(S))
+            mu = mu + np.dot(K, (z[i] - h))
+            Sigma = np.dot((np.eye(len(mu)) - np.dot(K, H)), Sigma)
+
+            self.landmarks[i].mu = mu[3 + 2*i:3 + 2*i + 2]
+            self.landmarks[i].sigma = Sigma[3 + 2*i:3 + 2*i + 2, 3 + 2*i:3 + 2*i + 2]
+
+
+        self.mu = mu[0:3]
+        self.Sigma = Sigma[0:3, 0:3]
+        return mu, Sigma
         
-        # Jacobian of the motion model
-        G = np.eye(len(mu), len(mu)) + np.dot(np.dot(F.T, np.array([[0, 0, -v * dt * np.sin(theta)],
-                [0, 0, v * dt * np.cos(theta)],
-                [0, 0, 0]])), F)
+
+    
+    # def EKF_SLAM(self, mu, Sigma, u, z, R, Q, dt): # http://ais.informatik.uni-freiburg.de/teaching/ws15/mapping/pdf/slam05-ekf-slam.pdf
+    #     """
+    #     Parameters:
+    #         mu: mean of the state
+    #         Sigma: covariance of the state
+    #         u: control input
+    #         z: measurements of all the landmarks
+    #         R: motion noise
+          
+    #     Returns:
+    #         mu: new mean of the state
+    #         Sigma: new covariance of the state
+    #     """
+
+    #     F = np.eye(3, len(mu))
+
+    #     # Calculate motion model
+    #     v = u[0]
+    #     w = u[1]
+    #     theta = mu[2]
+    #     g = mu + np.dot(F.T, np.array([v * dt * np.cos(theta),
+    #             v * dt * np.sin(theta),
+    #             w * dt]))
         
-        # Predicted state and covariance
-        mu_bar = g
-        Sigma_bar = np.dot(np.dot(G, Sigma), G.T) + np.dot(np.dot(F.T, R), F) # Add motion noise
+    #     # Jacobian of the motion model
+    #     G = np.eye(len(mu), len(mu)) + np.dot(np.dot(F.T, np.array([[0, 0, -v * dt * np.sin(theta)],
+    #             [0, 0, v * dt * np.cos(theta)],
+    #             [0, 0, 0]])), F)
+        
+    #     # Predicted state and covariance
+    #     mu_bar = g
+    #     Sigma_bar = np.dot(np.dot(G, Sigma), G.T) + np.dot(np.dot(F.T, R), F) # Add motion noise
 
-        # Measurement model
+    #     # Measurement model
 
-        for j in range(len(z)):
+    #     for j in range(len(z)):
 
-            # if c[j] == -1: # if the landmark is not in the state vector
-            #     # Add the landmark to the state vector
-            #     self.landmarks.append(Landmark(z[j][0], z[j][1], z[j][2], mu_bar[0] + z[j][0] * np.cos(z[j][1] + mu_bar[2]), mu_bar[1] + z[j][0] * np.sin(z[j][1] + mu_bar[2])))
+    #         # if c[j] == -1: # if the landmark is not in the state vector
+    #         #     # Add the landmark to the state vector
+    #         #     self.landmarks.append(Landmark(z[j][0], z[j][1], z[j][2], mu_bar[0] + z[j][0] * np.cos(z[j][1] + mu_bar[2]), mu_bar[1] + z[j][0] * np.sin(z[j][1] + mu_bar[2])))
 
-            #     # Add the landmark to the covariance matrix
-            #     Sigma_bar = np.vstack((Sigma_bar, np.zeros((2, Sigma_bar.shape[1]))))
-            #     Sigma_bar = np.hstack((Sigma_bar, np.zeros((Sigma_bar.shape[0], 2))))
-            #     Sigma_bar[-2:, -2:] = np.eye(2) * Q
+    #         #     # Add the landmark to the covariance matrix
+    #         #     Sigma_bar = np.vstack((Sigma_bar, np.zeros((2, Sigma_bar.shape[1]))))
+    #         #     Sigma_bar = np.hstack((Sigma_bar, np.zeros((Sigma_bar.shape[0], 2))))
+    #         #     Sigma_bar[-2:, -2:] = np.eye(2) * Q
 
-            #     # Update the landmark index
-            #     c[j] = len(self.landmarks) - 1
+    #         #     # Update the landmark index
+    #         #     c[j] = len(self.landmarks) - 1
 
-            delta = np.array([mu_bar[3 + 2*j] - mu_bar[0], mu_bar[3 + 2*j + 1] - mu_bar[1]])
-            q = np.dot(delta.T, delta) # x^2 + y^2
-            z_hat = np.array([np.sqrt(q),
-                            np.arctan2(delta[1], delta[0]) - mu_bar[2]]) # predicted measurement h
+    #         delta = np.array([mu_bar[3 + 2*j] - mu_bar[0], mu_bar[3 + 2*j + 1] - mu_bar[1]])
+    #         q = np.dot(delta.T, delta) # x^2 + y^2
+    #         z_hat = np.array([np.sqrt(q),
+    #                         np.arctan2(delta[1], delta[0]) - mu_bar[2]]) # predicted measurement h
 
-            # construct Fxj
-            #! Create the blocks
-            # identity_3x3 = np.eye(3)
-            # zeros_2x3 = np.zeros((2, 3))
-            # zeros_3x2j_2 = np.zeros((3, 2*(j + 1) - 2))
-            # zeros_2x2j_2 = np.zeros((2, 2*(j + 1) - 2))
-            # zeros_3x3 = np.zeros((3, 3))
-            # identity_2x2 = np.eye(2)
-            # zeros_3x2N_2j = np.zeros((3, 2*len(z) - 2*(j + 1)))
-            # zeros_2x2N_2j = np.zeros((2, 2*len(z) - 2*(j + 1)))
+    #         # construct Fxj
+    #         #! Create the blocks
+    #         # identity_3x3 = np.eye(3)
+    #         # zeros_2x3 = np.zeros((2, 3))
+    #         # zeros_3x2j_2 = np.zeros((3, 2*(j + 1) - 2))
+    #         # zeros_2x2j_2 = np.zeros((2, 2*(j + 1) - 2))
+    #         # zeros_3x3 = np.zeros((3, 3))
+    #         # identity_2x2 = np.eye(2)
+    #         # zeros_3x2N_2j = np.zeros((3, 2*len(z) - 2*(j + 1)))
+    #         # zeros_2x2N_2j = np.zeros((2, 2*len(z) - 2*(j + 1)))
 
-            # #! Create the matrix
-            # Fxj = np.block([[identity_3x3, zeros_3x2j_2, zeros_3x3, zeros_3x2N_2j],
-            #                 [zeros_2x3, zeros_2x2j_2, identity_2x2, zeros_2x2N_2j]])
-            #! Create the top part
-            identity_3xN = np.eye(3, 3 + 2*(j + 1) - 2 + 2 + 2*len(z) - 2*(j + 1))
+    #         # #! Create the matrix
+    #         # Fxj = np.block([[identity_3x3, zeros_3x2j_2, zeros_3x3, zeros_3x2N_2j],
+    #         #                 [zeros_2x3, zeros_2x2j_2, identity_2x2, zeros_2x2N_2j]])
+    #         #! Create the top part
+    #         identity_3xN = np.eye(3, 3 + 2*(j + 1) - 2 + 2 + 2*len(z) - 2*(j + 1))
 
-            #! Create the bottom part
-            zeros_2xN = np.zeros((2, 3 + 2*(j + 1) - 2)) # it is 3 + N
-            identity_2x2 = np.eye(2)
-            zeros_2x2N = np.zeros((2, 2*len(z) - 2*(j + 1)))
-            bottom_part = np.hstack([zeros_2xN, identity_2x2, zeros_2x2N])
+    #         #! Create the bottom part
+    #         zeros_2xN = np.zeros((2, 3 + 2*(j + 1) - 2)) # it is 3 + N
+    #         identity_2x2 = np.eye(2)
+    #         zeros_2x2N = np.zeros((2, 2*len(z) - 2*(j + 1)))
+    #         bottom_part = np.hstack([zeros_2xN, identity_2x2, zeros_2x2N])
 
-            #! Create the matrix
-            Fxj = np.vstack([identity_3xN, bottom_part])
+    #         #! Create the matrix
+    #         Fxj = np.vstack([identity_3xN, bottom_part])
 
-            # Jacobian of the measurement model
-            # H = (1 / q) * np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
-            #         [delta[1], - delta[0], - q, - delta[1], delta[0]]]), Fxj)
-            H = np.dot(np.array([[delta[1]/q, - delta[0]/q, -1, -delta[1]/q, delta[0]/q],
-                    [-delta[0]/np.sqrt(q), - delta[1]/np.sqrt(q), 0, delta[0]/np.sqrt(q), delta[1]/np.sqrt(q)]]), Fxj)
+    #         # Jacobian of the measurement model
+    #         H = (1 / q) * np.dot(np.array([[- np.sqrt(q) * delta[0], - np.sqrt(q) * delta[1], 0, np.sqrt(q) * delta[0], np.sqrt(q) * delta[1]],
+    #                 [delta[1], - delta[0], - q, - delta[1], delta[0]]]), Fxj)
+    #         # H = np.dot(np.array([[delta[1]/q, - delta[0]/q, -1, -delta[1]/q, delta[0]/q],
+    #         #         [-delta[0]/np.sqrt(q), - delta[1]/np.sqrt(q), 0, delta[0]/np.sqrt(q), delta[1]/np.sqrt(q)]]), Fxj)
 
-            # Kalman gain
-            K = np.dot(np.dot(Sigma_bar, H.T), np.linalg.inv(np.dot(np.dot(H, Sigma_bar), H.T) + Q))
-            mu_bar = mu_bar + np.dot(K, (z[j] - z_hat))
-            Sigma_bar = np.dot((np.eye(len(mu_bar)) - np.dot(K, H)), Sigma_bar)
+    #         # Kalman gain
+    #         K = np.dot(np.dot(Sigma_bar, H.T), np.linalg.inv(np.dot(np.dot(H, Sigma_bar), H.T) + Q))
+    #         mu_bar = mu_bar + np.dot(K, (z[j] - z_hat))
+    #         Sigma_bar = np.dot((np.eye(len(mu_bar)) - np.dot(K, H)), Sigma_bar)
 
-            self.landmarks[j].mu = mu_bar[3 + 2*j:3 + 2*j + 2]
-            self.landmarks[j].sigma = Sigma_bar[3 + 2*j:3 + 2*j + 2, 3 + 2*j:3 + 2*j + 2]
+    #         self.landmarks[j].mu = mu_bar[3 + 2*j:3 + 2*j + 2]
+    #         self.landmarks[j].sigma = Sigma_bar[3 + 2*j:3 + 2*j + 2, 3 + 2*j:3 + 2*j + 2]
 
-        self.mu = mu_bar[0:3]
-        self.Sigma = Sigma_bar[0:3, 0:3]
-        return mu_bar, Sigma_bar
+    #     self.mu = mu_bar[0:3]
+    #     self.Sigma = Sigma_bar[0:3, 0:3]
+    #     return mu_bar, Sigma_bar
         
 
     # Update function
@@ -503,13 +503,7 @@ class RobotController:
             v = 0.1 # linear velocity
             w = 0.1  # angular velocity
             dt = 0.1  # time step (corresponding to the rate of 10Hz)
-            self.motion_model(v, w, dt)
-            # self.theta += w * dt
-            # self.theta = np.arctan2(np.sin(self.theta), np.cos(self.theta))  # Normalize to [-pi, pi]
-
-            # # Update the position
-            # self.x += v * np.cos(self.theta) * dt
-            # self.y += v * np.sin(self.theta) * dt
+            # self.motion_model(v, w, dt)
             
 
             if self.landmarks != []:
