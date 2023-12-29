@@ -109,7 +109,7 @@ def camera_publisher():
 
 
                     confidence = math.ceil((box.conf[0]*100))/100
-                    if confidence < 0.85:
+                    if confidence < 0.80:
                         continue
                     # box coordinates
                     x1, y1, x2, y2 = box.xyxy[0]
