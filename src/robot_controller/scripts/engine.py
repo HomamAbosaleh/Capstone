@@ -66,10 +66,10 @@ def main(args: argparse.Namespace) -> None:
         data = Engine(tensor)
 
         bboxes, scores, labels = det_postprocess(data)
-        if bboxes.numel() == 0:
+        #if bboxes.numel() == 0:
             # if no bounding box
-            cv2.imshow('result', frame)
-            continue
+        #    cv2.imshow('result', frame)
+        #    continue
         bboxes -= dwdh
         bboxes /= ratio
 
