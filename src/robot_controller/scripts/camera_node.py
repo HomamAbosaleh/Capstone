@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import rospy
 from sensor_msgs.msg import Image
-from robot_controller.msg import DetectedObject
 import cv2
 from cv_bridge import CvBridge
 
@@ -31,15 +30,14 @@ class CameraNode:
         self.frame = None
 
     def main(self):
-        ret, frame = self.cap.read()
-        if ret:
-            image_message = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
-            self.image_pub.publish(image_message)
-            cv2.imshow('Robot View', frame)
-        else:
-            rospy.logerr("Unable to capture video frame")
-        
-        rospy.spin()
+        while not rospy.is_shutdown():
+            ret, frame = self.cap.read()
+            if ret:
+                image_message = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
+                self.image_pub.publish(image_message)
+                cv2.imshow('Robot View', frame)
+            else:
+                rospy.logerr("Unable to capture video frame")
 
 if __name__ == '__main__':
     rospy.init_node('camera_node')
