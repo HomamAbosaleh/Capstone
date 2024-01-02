@@ -120,11 +120,11 @@ def camera_publisher():
             publisher.publish(DetectedObject(-1, -1, -1, -1, "NULL"))
             # cv2.imshow('Robot View', frame)
 
-        k = cv2.waitKey(1) & 0xFF
+        # k = cv2.waitKey(1) & 0xFF
 
-        # If 'q' is pressed, break from the loop
-        if k == ord('q'):
-            break
+        # # If 'q' is pressed, break from the loop
+        # if k == ord('q'):
+        #     break
 
 
     # After the loop, close the camera
