@@ -5,7 +5,7 @@ import torch
 from config import CLASSES, COLORS
 from models import TRTModule
 from models.torch_utils import det_postprocess
-from models.utils import blob, letterbox, path_to_list
+from models.utils import blob, letterbox
 
 def main(args: argparse.Namespace) -> None:
     device = torch.device(args.device)
