@@ -7,7 +7,7 @@ import torch
 
 from config import CLASSES, COLORS
 from models.torch_utils import det_postprocess
-from models.utils import blob, letterbox, path_to_list
+from models.utils import blob, letterbox
 
 
 # Define the gstreamer pipeline

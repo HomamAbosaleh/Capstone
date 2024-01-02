@@ -25,7 +25,6 @@ class DetectionNode:
         detected = False
         # Convert the image message to an OpenCV image
         cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        draw = cv_image.copy()
         frame, ratio, dwdh = letterbox(cv_image, (self.W, self.H))
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         tensor = blob(rgb, return_seg=False)
