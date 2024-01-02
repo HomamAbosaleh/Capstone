@@ -27,7 +27,6 @@ class CameraNode:
                 416,
             )
         ), cv2.CAP_GSTREAMER)
-        self.frame = None
 
     def main(self):
         while not rospy.is_shutdown():
@@ -35,7 +34,7 @@ class CameraNode:
             if ret:
                 image_message = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
                 self.image_pub.publish(image_message)
-                cv2.imshow('Robot View', frame)
+                # cv2.imshow('Robot View', frame)
             else:
                 rospy.logerr("Unable to capture video frame")
 

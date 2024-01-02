@@ -6,7 +6,7 @@ import cv2
 from cv_bridge import CvBridge
 
 from models import TRTModule
-from config import CLASSES, COLORS
+from config import CLASSES
 from models.torch_utils import det_postprocess
 from models.utils import blob, letterbox
 
@@ -63,6 +63,6 @@ class DetectionNode:
         
 
 if __name__ == '__main__':
-    rospy.init_node('/detection')
+    rospy.init_node('detection_node')
     detection_node = DetectionNode()
     rospy.spin()
