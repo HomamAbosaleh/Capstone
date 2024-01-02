@@ -36,15 +36,15 @@ class ImageSubscriber(object):
             data = self.Engine(tensor)
 
             bboxes, scores, labels = det_postprocess(data)
-            if bboxes.numel() != 0:
-                bboxes.sub_(dwdh)
-                bboxes.div_(ratio)
-                print("Entering the loop")
-                for (bbox, score, label) in zip(bboxes, scores, labels):
-                    bbox = bbox.round().int().tolist()
-                    cls_id = int(label)
-                    cls = CLASSES[cls_id]
-                    self.publisher.publish(DetectedObject(int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]), cls))
+            bboxes.sub_(dwdh)
+            bboxes.div_(ratio)
+            print("Entering the loop")
+            for (bbox, score, label) in zip(bboxes, scores, labels):
+                bbox = bbox.round().int().tolist()
+                cls_id = int(label)
+                cls = CLASSES[cls_id]
+                self.publisher.publish(DetectedObject(int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]), cls))
+                
 
 def main() -> None:
     parser = argparse.ArgumentParser()

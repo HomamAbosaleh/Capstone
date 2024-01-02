@@ -8,6 +8,7 @@ from geometry_msgs.msg import Twist
 import numpy as np
 import rospy
 import math
+import tf
 
 import pandas as pd
 import os
@@ -103,8 +104,9 @@ class RobotController:
         # Update the orientation of the robot
         self.imu_x = orientation.x
         self.imu_y = orientation.y
-        self.imu_theta = 2 * np.arctan2(orientation.z, orientation.w)  # Convert quaternion to euler
-
+        quater = (orientation.x, orientation.y, orientation.z, orientation.w)
+        self.imu_theta = tf.transformations.euler_from_quaternion(quater) # Convert the orientation to Euler (3x1)
+    
     def odom_callback(self, msg):
         # Extract the pose and twist from the message
         pose = msg.pose.pose
@@ -113,7 +115,8 @@ class RobotController:
         # Update the state of the robot
         self.odom_x = pose.position.x
         self.odom_y = pose.position.y
-        self.odom_theta = 2 * np.arctan2(pose.orientation.z, pose.orientation.w)  # Convert quaternion to euler
+        quater = (pose.position.x, pose.position.y, pose.orientation.z, pose.orientation.w)
+        self.odom_theta = tf.transformations.euler_from_quaternion(quater) # Convert the orientation to Euler (3x1)
         # self.v = twist.linear.x
         # self.w = twist.angular.z
 
