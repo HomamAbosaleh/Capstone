@@ -432,13 +432,13 @@ class RobotController:
         # Create a new Twist message
         vel_msg = Twist()
 
-        # Set the linear velocity (forward speed) to 1 m/s
-        vel_msg.linear.x = 0.1
+        # Set the linear velocity (forward speed) to 0.01 m/s
+        vel_msg.linear.x = 0.01
 
         # Set the angular velocity (turn speed) based on the desired radius of the circle
         # Angular velocity is linear velocity divided by the radius
-        # For a circle of radius 1 meters, the angular velocity is 0.1 / 1 = 0.1 rad/s
-        vel_msg.angular.z = 0.1
+        # For a circle of radius 1 meters, the angular velocity is 0.01 / 1 = 0.01 rad/s
+        vel_msg.angular.z = 0.01
 
         # Publish the velocity message
         self.cmd_pub.publish(vel_msg)
@@ -505,7 +505,7 @@ class RobotController:
 
     def run(self):
         # Set the rate of the loop
-        rate = rospy.Rate(100)
+        rate = rospy.Rate(10)
 
         # initiate previously seen landmarks
         previous_landmarks = []
@@ -515,9 +515,9 @@ class RobotController:
             self.draw_a_circle()
 
             # Call the motion model function
-            v = 0.1 # linear velocity
-            w = 0.1  # angular velocity
-            dt = 1  # time step (corresponding to the rate of 10Hz)
+            v = 0.01 # linear velocity
+            w = 0.01  # angular velocity
+            dt = 0.1  # time step (corresponding to the rate of 10Hz)
             # self.motion_model(v, w, dt)
             
             print("This is v={}, w={}, dt={}".format(v, w, dt))
