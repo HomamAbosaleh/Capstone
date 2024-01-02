@@ -42,6 +42,29 @@ def gstreamer_pipeline(
 
 cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
+def draw_frames(frame, x1, y1, x2, y2, class_name, confidence) -> None:
+# put box in cam
+    cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 255), 3)
+
+    # draw the center of the object
+    cv2.circle(frame, (int((x1+x2)/2), int((y1+y2)/2)), radius=5, color=(0, 0, 255), thickness=-1)
+            
+    # draw the center of the image
+    cv2.circle(frame, (int(frame.shape[1]/2), int(frame.shape[0]/2)), radius=5, color=(0, 255, 0), thickness=-1)
+
+            
+    # Concatenate class name and confidence
+    text = class_name + ' (' + confidence + ')'
+
+    # object details
+    org = [x1, y1-5]
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 0.5
+    color = (255, 0, 0)
+    thickness = 1
+
+    cv2.putText(frame, text, org, font, fontScale, color, thickness)
+
 def main(args: argparse.Namespace) -> None:
     device = torch.device(args.device)
     Engine = TRTModule(args.engine, device)
@@ -78,12 +101,13 @@ def main(args: argparse.Namespace) -> None:
             cls_id = int(label)
             cls = CLASSES[cls_id]
             color = COLORS[cls]
-            cv2.rectangle(draw, bbox[:2], bbox[2:], color, 2)
-            cv2.putText(draw,
-                        f'{cls}:{score:.3f}', (bbox[0], bbox[1] - 2),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.75, [225, 255, 255],
-                        thickness=2)
+            draw_frames(draw, bbox[0], bbox[1], bbox[2], bbox[3], cls, score)
+            # cv2.rectangle(draw, bbox[:2], bbox[2:], color, 2)
+            # cv2.putText(draw,
+            #             f'{cls}:{score:.3f}', (bbox[0], bbox[1] - 2),
+            #             cv2.FONT_HERSHEY_SIMPLEX,
+            #             0.75, [225, 255, 255],
+            #             thickness=2)
 
         cv2.imshow('result', draw)
         k = cv2.waitKey(1) & 0xFF
