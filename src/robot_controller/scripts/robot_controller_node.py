@@ -230,7 +230,7 @@ class RobotController:
         q = dx**2 + dy**2
         sqrt_q = np.sqrt(q)
         H = np.zeros((2, len(mu)))
-        H[0, 0] = -dy / q
+        H[0, 0] = dy / q
         H[0, 1] = -dx / q
         H[0, 2] = -1
         H[1, 0] = -dx / sqrt_q
@@ -505,7 +505,7 @@ class RobotController:
 
     def run(self):
         # Set the rate of the loop
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(100)
 
         # initiate previously seen landmarks
         previous_landmarks = []
@@ -517,7 +517,7 @@ class RobotController:
             # Call the motion model function
             v = 0.1 # linear velocity
             w = 0.1  # angular velocity
-            dt = 0.1  # time step (corresponding to the rate of 10Hz)
+            dt = 1  # time step (corresponding to the rate of 10Hz)
             # self.motion_model(v, w, dt)
             
             print("This is v={}, w={}, dt={}".format(v, w, dt))
