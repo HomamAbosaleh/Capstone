@@ -115,10 +115,10 @@ def camera_publisher():
                     x1, y1, x2, y2 = box.xyxy[0]
                     publisher.publish(DetectedObject(int(x1), int(y1), int(x2), int(y2), class_name))
                     
-                    draw_frames(frame, int(x1), int(y1), int(x2), int(y2), class_name, str(confidence))
+                    # draw_frames(frame, int(x1), int(y1), int(x2), int(y2), class_name, str(confidence))
             # Streaming the images
             publisher.publish(DetectedObject(-1, -1, -1, -1, "NULL"))
-            cv2.imshow('Robot View', frame)
+            # cv2.imshow('Robot View', frame)
 
         k = cv2.waitKey(1) & 0xFF
 
