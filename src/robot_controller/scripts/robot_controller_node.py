@@ -527,6 +527,7 @@ class RobotController:
                 # Call the EKF function
                 u = np.array([v, w])
                 z = np.vstack([np.array([landmark.r, landmark.phi]) for landmark in self.landmarks])
+                print("z: ", z)
                 previously_landmarks, self.mu_extended, self.Sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
                 self.mu_extended, self.Sigma_extended = self.EKF_SLAM(mu=self.mu_extended, Sigma=self.Sigma_extended, u=u, z=z, R=self.R, Q=self.Q, dt=dt)
                 print("mu_extended: ", self.mu_extended)
