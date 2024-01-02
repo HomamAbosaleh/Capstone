@@ -432,13 +432,13 @@ class RobotController:
         # Create a new Twist message
         vel_msg = Twist()
 
-        # Set the linear velocity (forward speed) to 0.05 m/s
-        vel_msg.linear.x = 0.05
+        # Set the linear velocity (forward speed) to 0.01 m/s
+        vel_msg.linear.x = 0.01
 
         # Set the angular velocity (turn speed) based on the desired radius of the circle
         # Angular velocity is linear velocity divided by the radius
-        # For a circle of radius 0.5 meters, the angular velocity is 0.05 / 0.5 = 0.1 rad/s
-        vel_msg.angular.z = 0.1
+        # For a circle of radius 0.5 meters, the angular velocity is 0.01 / 0.5 = 0.02 rad/s
+        vel_msg.angular.z = 0.02
 
         # Publish the velocity message
         self.cmd_pub.publish(vel_msg)
@@ -515,8 +515,8 @@ class RobotController:
             self.draw_a_circle()
 
             # Call the motion model function
-            v = 0.05 # linear velocity
-            w = 0.1  # angular velocity
+            v = 0.01 # linear velocity
+            w = 0.02  # angular velocity
             dt = 0.1  # time step (corresponding to the rate of 10Hz)
             # self.motion_model(v, w, dt)
             
