@@ -52,10 +52,6 @@ def draw_frames(frame, x1, y1, x2, y2, class_name, confidence) -> None:
     # draw the center of the image
     cv2.circle(frame, (int(frame.shape[1]/2), int(frame.shape[0]/2)), radius=5, color=(0, 255, 0), thickness=-1)
 
-            
-    # Concatenate class name and confidence
-    text = class_name + ' (' + confidence + ')'
-
     # object details
     org = [x1, y1-5]
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -63,7 +59,7 @@ def draw_frames(frame, x1, y1, x2, y2, class_name, confidence) -> None:
     color = (255, 0, 0)
     thickness = 1
 
-    cv2.putText(frame, text, org, font, fontScale, color, thickness)
+    cv2.putText(frame, f'{class_name} ({confidence:.3f})', org, font, fontScale, color, thickness)
 
 def main(args: argparse.Namespace) -> None:
     device = torch.device(args.device)
