@@ -66,7 +66,7 @@ class Landmark:
         """
         self.r = r
         self.phi = phi
-        self.classname = classname
+        self.class_name = classname
         self.mu = np.zeros((2, 1))
         self.sigma = 1000.0 * np.eye(2)
 
