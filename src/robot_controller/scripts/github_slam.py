@@ -422,8 +422,6 @@ class RobotController:
         ekf = EKFSLAM()
         plot = Plotting()
 
-        N = len(self.landmarks)
-
         self.mu_extended = np.array([self.x, self.y, self.theta]).reshape(-1, 1)
         self.sigma_extended = np.zeros((3, 3))
 
@@ -434,6 +432,7 @@ class RobotController:
             # Move the robot in a circle
             self.draw_a_circle()
 
+            N = len(self.landmarks)
             if N != 0:
                 plot.update(states.flatten().copy(), self.mu_extended.flatten().copy(), t)
             measurements = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
