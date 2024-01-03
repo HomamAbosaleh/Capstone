@@ -151,10 +151,10 @@ class EKFSLAM:
         Fx = np.eye(3, 2*N+3)
 
         f, g = self.motion(u[0], u[1], prev_mu[2, 0], dt)
-        mu_bar = prev_mu + Fx.T @ f
+        mu_bar = prev_mu + (Fx.T @ f)
 
-        G = Fx.T @ g @ Fx + np.eye(2*N+3)
-        sigma_bar = G @ prev_sigma @ G.T + Fx.T @ R @ Fx
+        G = (Fx.T @ g @ Fx) + np.eye(2*N+3)
+        sigma_bar = (G @ prev_sigma @ G.T) + (Fx.T @ R @ Fx)
 
         for obs in z:
             j = obs.landmark.s
@@ -196,7 +196,7 @@ class EKFSLAM:
             K_i = sigma_bar @ H_i.T @ np.linalg.inv((H_i @ sigma_bar @ H_i.T + Q))
 
             mu_bar = mu_bar + (K_i @ (z_i-z_i_hat))
-            sigma_bar = (np.eye(sigma_bar.shape[0]) - K_i @ H_i) @ sigma_bar
+            sigma_bar = (np.eye(sigma_bar.shape[0]) - (K_i @ H_i)) @ sigma_bar
 
         return mu_bar, sigma_bar
 
@@ -418,7 +418,7 @@ class RobotController:
 
         ekf = EKFSLAM()
         plot = Plotting()
-        
+
         N = len(self.landmarks)
 
         self.mu_extended = np.array([self.x, self.y, self.theta]).reshape(-1, 1)
