@@ -153,7 +153,7 @@ class EKFSLAM:
 
         f, g = self.motion(u[0], u[1], prev_mu[2, 0], dt)
         print("These are the dimensions of mu: ", prev_mu.shape)
-        print("These are the dimensions of Fx.T @ f: ", (Fx.T @ f))
+        print("These are the dimensions of Fx.T @ f: ", (Fx.T @ f).shape)
         mu_bar = prev_mu + (Fx.T @ f)
 
         G = (Fx.T @ g @ Fx) + np.eye(2*N+3)
