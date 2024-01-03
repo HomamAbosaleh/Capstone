@@ -494,7 +494,7 @@ class RobotController:
             measurements = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
             states = self.state_update(states, u, self.R, dt)
 
-            self.mu_extended, self.sigma_extended = ekf.predict(prev_mu=self.mu_extended, prev_sigma=self.sigma_extended, u=u, z=measurements, dt=dt, N=N, Q=self.Q, R=self.R, landmarks=landmarks)
+            self.mu_extended, self.sigma_extended = ekf.predict(prev_mu=self.mu_extended, prev_sigma=self.sigma_extended, u=u, z=measurements, dt=dt, N=N, Q=self.Q, R=self.R, landmarks=self.landmarks)
             t += dt
 
             self.export_to_csv(self.mu_extended[0:3], self.sigma_extended[0:3,0:3], self.landmarks, states[0], states[1], states[2])
