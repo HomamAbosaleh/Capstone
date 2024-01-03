@@ -148,12 +148,9 @@ class EKFSLAM:
             mu: new state of the robot and landmarks
             sigma: new covariance of the robot and landmarks
         """
-        print("This is N: ", N)
         Fx = np.eye(3, 2*N+3)
 
         f, g = self.motion(u[0], u[1], prev_mu[2, 0], dt)
-        print("These are the dimensions of mu: ", prev_mu.shape)
-        print("These are the dimensions of Fx.T @ f: ", (Fx.T @ f).shape)
         mu_bar = prev_mu + (Fx.T @ f)
 
         G = (Fx.T @ g @ Fx) + np.eye(2*N+3)
@@ -433,12 +430,13 @@ class RobotController:
             self.draw_a_circle()
 
             N = len(self.landmarks)
+            previously_landmarks, self.mu_extended, self.sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
             if N != 0:
                 plot.update(states.flatten().copy(), self.mu_extended.flatten().copy(), t)
+                
             measurements = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
             states = self.state_update(states, u, self.R, dt)
 
-            previously_landmarks, self.mu_extended, self.sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
             self.mu_extended, self.sigma_extended = ekf.predict(prev_mu=self.mu_extended, prev_sigma=self.sigma_extended, u=u, z=measurements, dt=dt, N=N, Q=self.Q, R=self.R)
             t += dt
 
