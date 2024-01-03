@@ -196,6 +196,8 @@ class EKFSLAM:
             K_i = sigma_bar @ H_i.T @ np.linalg.inv((H_i @ sigma_bar @ H_i.T + Q))
             print("This is N: ", N)
             print("These are dimensions of mu_bar: ", mu_bar.shape)
+            print("These are dimensions of z_i-z_i_hat: ", (z_i-z_i_hat).shape)
+            print("These are dimensions of K_i: ", K_i.shape)
             print("These are dimensions of K_i @ (z_i-z_i_hat): ", (K_i @ (z_i-z_i_hat)).shape)
             mu_bar = mu_bar + (K_i @ (z_i-z_i_hat))
             sigma_bar = (np.eye(sigma_bar.shape[0]) - (K_i @ H_i)) @ sigma_bar
