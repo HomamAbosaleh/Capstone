@@ -194,7 +194,7 @@ class EKFSLAM:
 
             H_i = (1/q) * (h @ Fxj)
             K_i = sigma_bar @ H_i.T @ np.linalg.inv((H_i @ sigma_bar @ H_i.T + Q))
-            
+
             mu_bar = mu_bar + (K_i @ (z_i-z_i_hat))
             sigma_bar = (np.eye(sigma_bar.shape[0]) - (K_i @ H_i)) @ sigma_bar
 
@@ -299,9 +299,9 @@ class RobotController:
         pred_dict['Y'] = pred[1, 0]
         pred_dict['THETA'] = pred[2, 0]
         for n in range(N):
-            pred_dict['LM_' + str(n) + ' X'] = pred[3 + 3 * n, 0]
-            pred_dict['LM_' + str(n) + ' Y'] = pred[4 + 3 * n, 0]
-            pred_dict['LM_' + str(n) + ' ID'] = pred[5 + 3 * n, 0]
+            pred_dict['LM_' + str(n) + ' X'] = pred[3 + 2 * n, 0]
+            pred_dict['LM_' + str(n) + ' Y'] = pred[4 + 2 * n, 0]
+            # pred_dict['LM_' + str(n) + ' ID'] = pred[5 + 3 * n, 0]
 
         print('PREDICTED STATES')
         print(pred_dict)
