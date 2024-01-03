@@ -391,13 +391,13 @@ class RobotController:
         # Create a new Twist message
         vel_msg = Twist()
 
-        # Set the linear velocity (forward speed) to 0.05 m/s
-        vel_msg.linear.x = 0.05
+        # Set the linear velocity (forward speed) to 0.03 m/s
+        vel_msg.linear.x = 0.03
 
         # Set the angular velocity (turn speed) based on the desired radius of the circle
         # Angular velocity is linear velocity divided by the radius
-        # For a circle of radius 0.5 meters, the angular velocity is 0.05 / 0.5 = 0.1 rad/s
-        vel_msg.angular.z = 0.1
+        # For a circle of radius 0.5 meters, the angular velocity is 0.03 / 0.5 = 0.06 rad/s
+        vel_msg.angular.z = 0.06
 
         # Publish the velocity message
         self.cmd_pub.publish(vel_msg)
@@ -468,8 +468,8 @@ class RobotController:
         # initiate previously seen landmarks
         previous_landmarks = []
 
-        v = 0.05 # linear velocity
-        w = 0.1  # angular velocity
+        v = 3 # linear velocity
+        w = 0.06  # angular velocity
         dt = 0.1  # time step (corresponding to the rate of 10Hz)
         t = 0.0
 
