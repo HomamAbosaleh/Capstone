@@ -148,9 +148,12 @@ class EKFSLAM:
             mu: new state of the robot and landmarks
             sigma: new covariance of the robot and landmarks
         """
+        print("This is N: ", N)
         Fx = np.eye(3, 2*N+3)
 
         f, g = self.motion(u[0], u[1], prev_mu[2, 0], dt)
+        print("These are the dimensions of mu: ", prev_mu.shape)
+        print("These are the dimensions of Fx.T @ f: ", (Fx.T @ f))
         mu_bar = prev_mu + (Fx.T @ f)
 
         G = (Fx.T @ g @ Fx) + np.eye(2*N+3)
