@@ -442,7 +442,7 @@ class RobotController:
 
             # Sleep for the remainder of the loop
             rate.sleep()
-        self.performance(np.round(self.mu_extended, 3))
+        self.performance(np.round(self.mu_extended, 3), N)
         plot.show(self.mu_extended, self.landmarks, N)
 
 
