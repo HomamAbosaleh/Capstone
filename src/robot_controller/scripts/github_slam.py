@@ -148,7 +148,7 @@ class EKFSLAM:
             mu: new state of the robot and landmarks
             sigma: new covariance of the robot and landmarks
         """
-        Fx = np.eye((3, 2*N+3))
+        Fx = np.eye(3, 2*N+3)
 
         f, g = self.motion(u[0], u[1], prev_mu[2, 0], dt)
         mu_bar = prev_mu + Fx.T @ f
@@ -175,7 +175,7 @@ class EKFSLAM:
             z_i_hat[1, 0] = atan2(delt_y, delt_x) - mu_bar[2, 0]
             # z_i_hat[2, 0] = obs.landmark.s
 
-            Fxj_a = np.eye((5, 3))
+            Fxj_a = np.eye(5, 3)
             Fxj_b = np.zeros((5, 2*N))
             Fxj_b[3:, 2*j:2+2*j] = np.eye(2)
             Fxj = np.hstack((Fxj_a, Fxj_b))
