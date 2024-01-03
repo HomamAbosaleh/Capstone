@@ -194,7 +194,9 @@ class EKFSLAM:
 
             H_i = (1/q) * (h @ Fxj)
             K_i = sigma_bar @ H_i.T @ np.linalg.inv((H_i @ sigma_bar @ H_i.T + Q))
-
+            print("This is N: ", N)
+            print("These are dimensions of mu_bar: ", mu_bar.shape)
+            print("These are dimensions of K_i @ (z_i-z_i_hat): ", (K_i @ (z_i-z_i_hat)).shape)
             mu_bar = mu_bar + (K_i @ (z_i-z_i_hat))
             sigma_bar = (np.eye(sigma_bar.shape[0]) - (K_i @ H_i)) @ sigma_bar
 
@@ -433,7 +435,7 @@ class RobotController:
             previously_landmarks, self.mu_extended, self.sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
             if N != 0:
                 plot.update(states.flatten().copy(), self.mu_extended.flatten().copy(), t)
-                
+
             measurements = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
             states = self.state_update(states, u, self.R, dt)
 
