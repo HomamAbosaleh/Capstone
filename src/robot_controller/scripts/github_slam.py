@@ -132,7 +132,7 @@ class EKFSLAM:
 
         return a, b
 
-    def predict(self, prev_mu=None, prev_sigma=None, u=None, z=None, dt=None, N=None, R=None, Q=None):
+    def predict(self, prev_mu=None, prev_sigma=None, u=None, z=None, dt=None, N=None, R=None, Q=None, landmarks=None):
         """
         Parameters:
             prev_mu: previous state of the robot and landmarks
@@ -197,6 +197,9 @@ class EKFSLAM:
 
             mu_bar = mu_bar + (K_i @ (z_i-z_i_hat))
             sigma_bar = (np.eye(sigma_bar.shape[0]) - (K_i @ H_i)) @ sigma_bar
+
+            landmarks[j].mu = mu_bar[3 + 2*j:3 + 2*j + 2]
+            landmarks[j].sigma = sigma_bar[3 + 2*j:3 + 2*j + 2, 3 + 2*j:3 + 2*j + 2]
 
         return mu_bar, sigma_bar
 
@@ -346,11 +349,6 @@ class RobotController:
         x += (x_dot + np.random.normal(0., R[0, 0])) * dt
         y += (y_dot + np.random.normal(0., R[1, 1])) * dt
 
-
-        # updating the robot x, y, theta
-        self.x = x
-        self.y = y
-        self.theta = theta
         return np.array([x, y, theta])
     
     # Update function
@@ -403,6 +401,65 @@ class RobotController:
 
         # Publish the velocity message
         self.cmd_pub.publish(vel_msg)
+
+    def export_to_csv(self, mu, sigma, landmarks, odom_x, odom_y, odom_theta):
+        # Define the CSV file path
+        odom_file = 'odom.csv'    
+        # imu_file = 'imu.csv'
+        ekf_file = 'ekf.csv'
+        # Create a DataFrame from mu_extended and Sigma_extended
+
+        ekf_dict = {}
+        ekf_dict['mu'] = [mu.flatten()]
+        ekf_dict['sigma'] = [sigma.flatten()]
+        
+        for i in range(3):
+            if i < len(landmarks) and landmarks[i] is not None:
+                ekf_dict['mu_{}'.format(i)] = [landmarks[i].mu.flatten()]
+                ekf_dict['sigma_{}'.format(i)] = [landmarks[i].sigma.flatten()]
+            else:
+                ekf_dict['mu_{}'.format(i)] = [np.array([-1000.0, -1000.0]).flatten()]
+                ekf_dict['sigma_{}'.format(i)] = [np.array([[-1000.0, 0.0], [-1000.0, 0.0]]).flatten()]
+
+        ekf_data = pd.DataFrame(ekf_dict, index=[0])
+
+        # Check if the file exists
+        if os.path.isfile(ekf_file):
+            # If the file exists, append without writing the header
+            ekf_data.to_csv(ekf_file, mode='a', header=False, index=False)
+        else:
+            # If the file does not exist, write the DataFrame with the header
+            ekf_data.to_csv(ekf_file, index=False)
+            
+        #! odom
+        odom_data = pd.DataFrame({
+            'x': [odom_x],
+            'y': [odom_y],
+            'theta': [odom_theta]
+        })
+
+        # Check if the file exists
+        if os.path.isfile(odom_file):
+            # If the file exists, append without writing the header
+            odom_data.to_csv(odom_file, mode='a', header=False, index=False)
+        else:
+            # If the file does not exist, write the DataFrame with the header
+            odom_data.to_csv(odom_file, index=False)
+
+        #! imu
+        # imu_data = pd.DataFrame({
+        #     'x': [imu_x],
+        #     'y': [imu_y],
+        #     'theta': [imu_theta]
+        # })
+
+        # # Check if the file exists
+        # if os.path.isfile(imu_file):
+        #     # If the file exists, append without writing the header
+        #     imu_data.to_csv(imu_file, mode='a', header=False, index=False)
+        # else:
+        #     # If the file does not exist, write the DataFrame with the header
+        #     imu_data.to_csv(imu_file, index=False)
     
     def run(self):
         # Set the rate of the loop
@@ -437,9 +494,10 @@ class RobotController:
             measurements = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
             states = self.state_update(states, u, self.R, dt)
 
-            self.mu_extended, self.sigma_extended = ekf.predict(prev_mu=self.mu_extended, prev_sigma=self.sigma_extended, u=u, z=measurements, dt=dt, N=N, Q=self.Q, R=self.R)
+            self.mu_extended, self.sigma_extended = ekf.predict(prev_mu=self.mu_extended, prev_sigma=self.sigma_extended, u=u, z=measurements, dt=dt, N=N, Q=self.Q, R=self.R, landmarks=landmarks)
             t += dt
 
+            self.export_to_csv(self.mu_extended[0:3], self.sigma_extended[0:3,0:3], self.landmarks, states[0], states[1], states[2])
             # Sleep for the remainder of the loop
             rate.sleep()
         self.performance(np.round(self.mu_extended, 3), N)
