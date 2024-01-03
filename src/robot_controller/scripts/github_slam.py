@@ -301,8 +301,7 @@ class RobotController:
         for n in range(N):
             pred_dict['LM_' + str(n) + ' X'] = pred[3 + 2 * n, 0]
             pred_dict['LM_' + str(n) + ' Y'] = pred[4 + 2 * n, 0]
-            # pred_dict['LM_' + str(n) + ' ID'] = pred[5 + 3 * n, 0]
-            pred_dict['LM_' + str(n) + ' ID'] = n 
+            pred_dict['LM_' + str(n) + ' ID'] = self.landmarks[n].class_name 
 
         print('PREDICTED STATES')
         print(pred_dict)
