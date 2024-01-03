@@ -150,7 +150,7 @@ class EKFSLAM:
         """
         Fx = np.eye((3, 2*N+3))
 
-        f, g = self.motion(u[0], u[1], prev_mu[2, 0])
+        f, g = self.motion(u[0], u[1], prev_mu[2, 0], dt)
         mu_bar = prev_mu + Fx.T @ f
 
         G = Fx.T @ g @ Fx + np.eye(2*N+3)
@@ -433,11 +433,11 @@ class RobotController:
 
             if N != 0:
                 plot.update(states.flatten().copy(), self.mu_extended.flatten().copy(), t)
-            zs = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
+            measurements = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
             states = self.state_update(states, u, self.R, dt)
 
             previously_landmarks, self.mu_extended, self.sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
-            self.mu_extended, self.sigma_extended = ekf.predict(self.mu_extended, self.sigma_extended, u, zs)
+            self.mu_extended, self.sigma_extended = ekf.predict(prev_mu=self.mu_extended, prev_sigma=self.sigma_extended, u=u, z=measurements, dt=dt, N=N, Q=self.Q, R=self.R)
             t += dt
 
             # Sleep for the remainder of the loop
