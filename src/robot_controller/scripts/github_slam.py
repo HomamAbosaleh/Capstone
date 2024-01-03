@@ -226,7 +226,7 @@ class RobotController:
         """
         self.x = 0.0
         self.y = 0.0
-        self.theta = 0.0
+        self.theta = -(np.pi/2.0)
         # self.v = 0.0
         # self.w = 0.0
 

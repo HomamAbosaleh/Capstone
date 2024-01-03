@@ -59,7 +59,7 @@ class RobotController:
         """
         self.x = 0.0
         self.y = 0.0
-        self.theta = 0.0
+        self.theta = -(np.pi/2.0)
         # self.v = 0.0
         # self.w = 0.0
 
@@ -513,7 +513,7 @@ class RobotController:
             self.draw_a_circle()
 
             # Call the motion model function
-            v = 0.03 # linear velocity
+            v = 30 # linear velocity
             w = 0.06  # angular velocity
             dt = 0.1  # time step (corresponding to the rate of 10Hz)
             self.motion_model(v, w, dt)
