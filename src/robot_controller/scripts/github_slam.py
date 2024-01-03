@@ -158,7 +158,7 @@ class EKFSLAM:
 
         for obs in z:
             j = obs.landmark.s
-            z_i = np.array([obs.rng, obs.ang, obs.id]).reshape(-1, 1)
+            z_i = np.array([obs.rng, obs.ang]).reshape(-1, 1)
             if not obs.landmark.seen:
                 mu_bar[3+2*j, 0] = mu_bar[0, 0] + obs.rng * cos(obs.ang + mu_bar[2, 0])  # x
                 mu_bar[4+2*j, 0] = mu_bar[1, 0] + obs.rng * sin(obs.ang + mu_bar[2, 0])  # y
@@ -194,12 +194,7 @@ class EKFSLAM:
 
             H_i = (1/q) * (h @ Fxj)
             K_i = sigma_bar @ H_i.T @ np.linalg.inv((H_i @ sigma_bar @ H_i.T + Q))
-            print("This is N: ", N)
-            print("These are dimensions of mu_bar: ", mu_bar.shape)
-            print("These are dimensions of z_i: ", z_i.shape)
-            print("These are dimensions of z_i_hat: ", z_i_hat.shape)
-            print("These are dimensions of K_i: ", K_i.shape)
-            print("These are dimensions of K_i @ (z_i-z_i_hat): ", (K_i @ (z_i-z_i_hat)).shape)
+            
             mu_bar = mu_bar + (K_i @ (z_i-z_i_hat))
             sigma_bar = (np.eye(sigma_bar.shape[0]) - (K_i @ H_i)) @ sigma_bar
 
