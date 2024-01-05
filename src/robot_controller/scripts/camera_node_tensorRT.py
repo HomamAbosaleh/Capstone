@@ -106,15 +106,15 @@ def camera_publisher():
             cls_id = int(label)
             cls = CLASSES[cls_id]
             publisher.publish(DetectedObject(bbox[0], bbox[1], bbox[2], bbox[3], cls))
-            draw_frames(frame, bbox[0], bbox[1], bbox[2], bbox[3], cls, score)
+            # draw_frames(frame, bbox[0], bbox[1], bbox[2], bbox[3], cls, score)
 
         publisher.publish(DetectedObject(-1, -1, -1, -1, "NULL"))
-        cv2.imshow('result', draw)
-        k = cv2.waitKey(1) & 0xFF
+        # cv2.imshow('result', draw)
+        # k = cv2.waitKey(1) & 0xFF
 
-        # If 'q' is pressed, break from the loop
-        if k == ord('q'):
-            break
+        # # If 'q' is pressed, break from the loop
+        # if k == ord('q'):
+        #     break
 
 
     # After the loop, close the camera

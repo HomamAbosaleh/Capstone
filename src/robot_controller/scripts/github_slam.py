@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import numpy as np
 import matplotlib.pyplot as plt
 from math import sin, cos, atan2
@@ -38,8 +40,9 @@ class Plotting:
         self.pred_y.append(pred_states[1])
         self.pred_theta.append(pred_states[2])
 
-        self.pred_lm_x.append(pred_states[3])
-        self.pred_lm_y.append(pred_states[4])
+        if len(pred_states) > 3:
+            self.pred_lm_x.append(pred_states[3])
+            self.pred_lm_y.append(pred_states[4])
 
         self.time.append(time)
 
@@ -75,10 +78,8 @@ class Landmark:
         self.s = sig
         self.seen = False
 
-        self.x_hat = 0.0
-        self.y_hat = 0.0
-        # self.s_hat = 0.
-
+        # self.x_hat = 0.0
+        # self.y_hat = 0.0
 
 class Measurement:
     def __init__(self, rng, ang, j, landmark):
@@ -93,11 +94,7 @@ class Measurement:
         self.ang = ang
         self.id = j
         self.landmark = landmark
-        # for lmrk in landmarks:
-        #     if lmrk.s == j:
-        #         self.landmark = lmrk
         
-
 
 class EKFSLAM:
 
@@ -162,7 +159,6 @@ class EKFSLAM:
             if not obs.landmark.seen:
                 mu_bar[3+2*j, 0] = mu_bar[0, 0] + obs.rng * cos(obs.ang + mu_bar[2, 0])  # x
                 mu_bar[4+2*j, 0] = mu_bar[1, 0] + obs.rng * sin(obs.ang + mu_bar[2, 0])  # y
-                # mu_bar[5+3*j, 0] = obs.landmark.s  # s
                 obs.landmark.seen = True
 
             delt_x = mu_bar[3+2*j, 0] - mu_bar[0, 0]
@@ -173,7 +169,6 @@ class EKFSLAM:
             z_i_hat = np.zeros((2, 1))
             z_i_hat[0, 0] = np.sqrt(q)
             z_i_hat[1, 0] = atan2(delt_y, delt_x) - mu_bar[2, 0]
-            # z_i_hat[2, 0] = obs.landmark.s
 
             Fxj_a = np.eye(5, 3)
             Fxj_b = np.zeros((5, 2*N))
@@ -190,7 +185,6 @@ class EKFSLAM:
             h[1, 2] = -q
             h[1, 3] = -delt_y
             h[1, 4] = delt_x
-            # h[2, 5] = q
 
             H_i = (1/q) * (h @ Fxj)
             K_i = sigma_bar @ H_i.T @ np.linalg.inv((H_i @ sigma_bar @ H_i.T + Q))
@@ -253,8 +247,15 @@ class RobotController:
                 distance, bearing = self.calculate_distance_and_angle(msg.x1, msg.x2, msg.y1, msg.y2, msg.class_name)
                 landmark = next((landmark for landmark in self.landmarks if landmark.class_name == msg.class_name), None)
                 if(landmark is None):
-                    self.landmarks.append(Landmark(0.0, 0.0, 
-                        sig=len(self.landmarks), r=distance, phi=bearing, classname=msg.class_name))
+                    if msg.class_name == "big bin":
+                        self.landmarks.append(Landmark(436, -170.0, 
+                            sig=len(self.landmarks), r=distance, phi=bearing, classname=msg.class_name))
+                    elif msg.class_name == "medium bin":
+                        self.landmarks.append(Landmark(394.5, 85.0, 
+                            sig=len(self.landmarks), r=distance, phi=bearing, classname=msg.class_name))
+                    else:
+                        self.landmarks.append(Landmark(-212.5, 28.0, 
+                            sig=len(self.landmarks), r=distance, phi=bearing, classname=msg.class_name))
                 else:
                     landmark.r = distance
                     landmark.phi = bearing
@@ -285,10 +286,6 @@ class RobotController:
         focal_in_meter = 2.96e-3  # Convert from millimeters to meters
 
         angle_in_radians = atan2(difference_object_image * px_in_meter, focal_in_meter)
-        #print("Class name: ", class_name)
-        #print("Distance in centimeters: ", distance_in_meters)
-        #print("Bearning angle in radians: ", angle_in_radians)
-        #print("==================================================================================")
 
         return distance_in_meters, angle_in_radians
 
@@ -488,8 +485,8 @@ class RobotController:
 
             N = len(self.landmarks)
             previously_landmarks, self.mu_extended, self.sigma_extended = self.extend_sigma_mu(previous_landmarks, self.landmarks)
-            if N != 0:
-                plot.update(states.flatten().copy(), self.mu_extended.flatten().copy(), t)
+
+            plot.update(states.flatten().copy(), self.mu_extended.flatten().copy(), t)
 
             measurements = [Measurement(rng=landmark.r, ang=landmark.phi, j=landmark.s, landmark=landmark) for landmark in self.landmarks]
             states = self.state_update(states, u, self.R, dt)
