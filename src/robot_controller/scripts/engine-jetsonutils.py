@@ -1,6 +1,7 @@
 import argparse
 import jetson_utils
 import torch
+import cv2
 
 from config import CLASSES, COLORS
 from models import TRTModule
